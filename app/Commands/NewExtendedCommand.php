@@ -78,7 +78,8 @@ class NewExtendedCommand extends Command
      */
     protected function installLaravelTask()
     {
-        $this->task("💻 Installing Laravel", function () {
+        $this->task("💻 INSTALLING LARAVEL", function () {
+            $this->newLine();
             $options = collect($this->options())
                 ->filter()->mapWithKeys(function ($value, $key) {
                     return ["--{$key}" => $value];
@@ -113,7 +114,7 @@ class NewExtendedCommand extends Command
         }
 
         if (!empty($this->devPackagesToInstall)) {
-            $this->task("📚 Installing Additional Dev Dependencies", function () {
+            $this->task("📚 INSTALLING ADDITIONAL DEV DEPENDENCIES", function () {
                 $this->newLine(2);
                 $packages = implode(' ', $this->devPackagesToInstall);
                 return $this->helper->execOnProject($this->helper->findComposer() . ' require --dev ' . $packages);
@@ -127,14 +128,17 @@ class NewExtendedCommand extends Command
             $this->newComposerFile['scripts']['phpcbf'] = './vendor/bin/phpcbf --standard=phpcs.xml';
             $optimizeScripts[] = "@phpcbf";
 
-            $this->task("📂 Creating phpcs.xml file", function () {
+            $this->task("📂 CREATING phpcs.xml FILE", function () {
                 return $this->helper->execOnProject($this->helper->copy() . base_path() . '/assets/phpcs.xml ' . $this->projectPath);
             });
 
-            $this->task("Executing PHPCS", function () {
+            $this->newLine();
+
+            $this->task("EXECUTING PHPCS", function () {
                 return $this->helper->execOnProject($this->newComposerFile['scripts']['phpcbf']);
             });
-            $a = 1;
+
+            $this->newLine(2);
         }
 
         if ($installIDEHelper) {
@@ -146,10 +150,12 @@ class NewExtendedCommand extends Command
                 "@php artisan ide-helper:models --write-mixin --ansi --no-interaction"
             );
 
-            $this->task("📂 Publishing vendor config files", function () {
+            $this->task("📂 PUBLISHING VENDOR CONFIG FILES", function () {
                 $this->newLine();
                 return $this->helper->execOnProject(PHP_BINARY . ' artisan vendor:publish --provider="Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider" --tag=config');
             });
+
+            $this->newLine();
         }
 
         if (!empty($optimizeScripts) && $this->confirm('Install optimization scripts on composer.json?', true)) {
@@ -164,7 +170,7 @@ class NewExtendedCommand extends Command
     protected function gitHubTasks()
     {
         $this->info('=============== GITHUB ===============');
-        $this->task("Updating project's .gitignore", function () {
+        $this->task("UPDATING PROJECT'S .gitignore", function () {
             $this->newLine();
             return $this->helper->execOnProject([
                 'echo ".idea/ \n.phpunit.result.cache \n.phpstorm.meta.php \n_ide_helper.php \n_ide_helper_models.php" >> .gitignore'
@@ -184,7 +190,7 @@ class NewExtendedCommand extends Command
                         'chmod +x pre-commit-hook.sh'
                     ];
 
-                    $this->task('Creating PHPCS "pre-commit-hook"', function () use ($installHooksScript) {
+                    $this->task('CREATING PHPCS "pre-commit-hook"', function () use ($installHooksScript) {
                         $this->newLine();
                         $this->helper->execOnProject(array_merge(
                                 [$this->helper->copy() . base_path() . '/assets/pre-commit-hook.sh ' . $this->projectPath],
@@ -198,7 +204,7 @@ class NewExtendedCommand extends Command
                 }
             }
 
-            $this->task('Creating repository', function () {
+            $this->task('CREATING REPOSITORY', function () {
                 $this->newLine();
                 $this->helper->execOnProject([
                     'git add .',
@@ -207,6 +213,8 @@ class NewExtendedCommand extends Command
                     'git push -u origin master'
                 ]);
             });
+
+            $this->newLine();
         }
     }
 
@@ -243,7 +251,7 @@ class NewExtendedCommand extends Command
 
         $this->newComposerFile['scripts'] = $scripts;
 
-        $this->task("Updating composer.json", function () {
+        $this->task("🆙 UPDATING composer.json", function () {
             $newComposerString = json_encode($this->newComposerFile,
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             return file_put_contents($this->projectPath . '/composer.json', $newComposerString);
