@@ -51,6 +51,12 @@ class NewExtendedCommand extends Command
     protected $newComposerFile;
 
     /**
+     * List of packages that will be installed with the script
+     * @var string
+     */
+    private $devPackagesToInstall;
+
+    /**
      * Execute the console command.
      *
      * @return mixed
@@ -62,6 +68,7 @@ class NewExtendedCommand extends Command
 
         $this->installLaravelTask();
         $this->devDependenciesTasks();
+        $this->gitHubTasks();
         $this->composerFileTasks();
     }
 
@@ -94,21 +101,21 @@ class NewExtendedCommand extends Command
      */
     protected function devDependenciesTasks()
     {
-        $devPackagesToInstall = [''];
+        $this->devPackagesToInstall = [];
         $optimizeScripts = [];
 
         if ($installPHPCS = $this->confirm('Install PHP_CodeSniffer?', true)) {
-            $devPackagesToInstall[] = 'squizlabs/php_codesniffer';
+            $this->devPackagesToInstall[] = 'squizlabs/php_codesniffer';
         }
 
         if ($installIDEHelper = $this->confirm('Install Laravel IDE Helper Generator?', true)) {
-            $devPackagesToInstall[] = 'barryvdh/laravel-ide-helper';
+            $this->devPackagesToInstall[] = 'barryvdh/laravel-ide-helper';
         }
 
-        if (!empty($devPackagesToInstall)) {
-            $this->task("📚 Installing Additional Dev Dependencies", function () use ($devPackagesToInstall) {
+        if (!empty($this->devPackagesToInstall)) {
+            $this->task("📚 Installing Additional Dev Dependencies", function () {
                 $this->newLine(2);
-                $packages = implode(' ', $devPackagesToInstall);
+                $packages = implode(' ', $this->devPackagesToInstall);
                 return $this->helper->execOnProject($this->helper->findComposer() . ' require --dev ' . $packages);
             });
 
@@ -121,8 +128,13 @@ class NewExtendedCommand extends Command
             $optimizeScripts[] = "@phpcbf";
 
             $this->task("📂 Creating phpcs.xml file", function () {
-                return $this->helper->execOnProject((PHP_OS_FAMILY == 'Windows' ? 'copy ' : 'cp ') . base_path() . '/assets/phpcs.xml ' . $this->projectPath);
+                return $this->helper->execOnProject($this->helper->copy() . base_path() . '/assets/phpcs.xml ' . $this->projectPath);
             });
+
+            $this->task("Executing PHPCS", function () {
+                return $this->helper->execOnProject($this->newComposerFile['scripts']['phpcbf']);
+            });
+            $a = 1;
         }
 
         if ($installIDEHelper) {
@@ -141,12 +153,65 @@ class NewExtendedCommand extends Command
         }
 
         if (!empty($optimizeScripts) && $this->confirm('Install optimization scripts on composer.json?', true)) {
+            $this->newComposerFile['scripts']['post-update-cmd'] = [
+                "Illuminate\\Foundation\\ComposerScripts::postUpdate",
+                "@optimize"
+            ];
             $this->newComposerFile['scripts']['optimize'] = $optimizeScripts;
         }
     }
 
+    protected function gitHubTasks()
+    {
+        $this->info('=============== GITHUB ===============');
+        $this->task("Updating project's .gitignore", function () {
+            $this->newLine();
+            return $this->helper->execOnProject([
+                'echo ".idea/ \n.phpunit.result.cache \n.phpstorm.meta.php \n_ide_helper.php \n_ide_helper_models.php" >> .gitignore'
+            ]);
+        });
+
+        $this->newLine();
+        if ($this->confirm('Create GitHub repository for ' . $this->argument('name') . '? (GitHub CLI required. Check: https://cli.github.com/)', true)) {
+            $this->helper->execOnProject('git init');
+            $this->newLine();
+
+            if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
+                if ($this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?', true)) {
+                    $installHooksScript = [
+                        $this->helper->copy() . 'pre-commit-hook.sh .git/hooks/pre-commit',
+                        'chmod +x .git/hooks/pre-commit',
+                        'chmod +x pre-commit-hook.sh'
+                    ];
+
+                    $this->task('Creating PHPCS "pre-commit-hook"', function () use ($installHooksScript) {
+                        $this->newLine();
+                        $this->helper->execOnProject(array_merge(
+                                [$this->helper->copy() . base_path() . '/assets/pre-commit-hook.sh ' . $this->projectPath],
+                                $installHooksScript
+                            )
+                        );
+                    });
+
+                    $this->newComposerFile['scripts']['install-hooks'] = $installHooksScript;
+                    $this->newComposerFile['scripts']['pre-install-cmd'] = $this->newComposerFile['scripts']['post-install-cmd'] = ['@install-hooks'];
+                }
+            }
+
+            $this->task('Creating repository', function () {
+                $this->newLine();
+                $this->helper->execOnProject([
+                    'git add .',
+                    'git commit -m "Initial commit" --no-verify',
+                    'gh repo create ' . $this->argument('name') . ' --private -y',
+                    'git push -u origin master'
+                ]);
+            });
+        }
+    }
+
     /**
-     * Tasks related to update the composer.json file of the projects with new scripts
+     * Tasks related to update the composer.json file of the projects with new scripts.
      * @return bool
      */
     protected function composerFileTasks()
@@ -155,8 +220,32 @@ class NewExtendedCommand extends Command
             return true;
         }
 
-        $this->task("> Updating composer.json", function () {
-            $newComposerString = json_encode($this->newComposerFile, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $orderedScripts = [
+            'post-autoload-dump',
+            'post-root-package-install',
+            'post-create-project-cmd',
+            'post-update-cmd',
+            'install-hooks',
+            'pre-install-cmd',
+            'post-install-cmd',
+            'phpcs',
+            'phpcbf',
+            'optimize'
+        ];
+
+        // Making sure that the scripts will come in a nice order
+        $scripts = [];
+        foreach ($orderedScripts as $scriptName) {
+            if (array_key_exists($scriptName, $this->newComposerFile['scripts'])) {
+                $scripts[$scriptName] = $this->newComposerFile['scripts'][$scriptName];
+            }
+        }
+
+        $this->newComposerFile['scripts'] = $scripts;
+
+        $this->task("Updating composer.json", function () {
+            $newComposerString = json_encode($this->newComposerFile,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             return file_put_contents($this->projectPath . '/composer.json', $newComposerString);
         });
     }

@@ -105,6 +105,11 @@ class CommandHelper extends NewCommand
         return parent::runCommands($commands, $this->input, $this->output);
     }
 
+    public function copy()
+    {
+        return (PHP_OS_FAMILY == 'Windows' ? 'copy ' : 'cp ');
+    }
+
     /**
      * Replace the given string in the given file.
      *
