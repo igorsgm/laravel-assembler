@@ -20,14 +20,20 @@ class CommandHelper extends NewCommand
     protected $output;
 
     /**
+     * @var string
+     */
+    protected $projectPath;
+
+    /**
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return $this
      */
-    public function setInputAndOutput(InputInterface $input, OutputInterface $output)
+    public function setData(InputInterface $input, OutputInterface $output, $projectPath)
     {
         $this->input = $input;
         $this->output = $output;
+        $this->projectPath = $projectPath;
 
         return $this;
     }
@@ -36,9 +42,19 @@ class CommandHelper extends NewCommand
      * @param $projectName
      * @return string
      */
-    public function projectPath($projectName)
+    public function projectDirectory($projectName)
     {
         return $projectName !== '.' ? getcwd() . '/' . $projectName : '.';
+    }
+
+    /**
+     * @param $projectPath
+     * @return mixed
+     */
+    public function getProjectComposerFile($projectPath)
+    {
+        $composer = file_get_contents($projectPath . '/composer.json');
+        return json_decode($composer, true);
     }
 
     /**
@@ -54,13 +70,38 @@ class CommandHelper extends NewCommand
     /**
      * Run the given commands.
      *
-     * @param array $commands
+     * @param string|array $commands
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return Process
      */
     public function exec($commands)
     {
+        if (!is_array($commands)) {
+            $commands = [$commands];
+        }
+
+        return parent::runCommands($commands, $this->input, $this->output);
+    }
+
+    /**
+     * Run the given commands.
+     *
+     * @param string|array $commands
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return Process
+     */
+    public function execOnProject($commands)
+    {
+        if (!is_array($commands)) {
+            $commands = [$commands];
+        }
+
+        foreach ($commands as $key => $command) {
+            $commands[$key] = '(cd ' . $this->projectPath . ' && ' . $command . ')';
+        }
+
         return parent::runCommands($commands, $this->input, $this->output);
     }
 
