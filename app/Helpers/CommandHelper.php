@@ -111,15 +111,17 @@ class CommandHelper extends NewCommand
     }
 
     /**
-     * Replace the given string in the given file.
-     *
-     * @param string $search
-     * @param string $replace
-     * @param string $file
+     * @see https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html#toolbox
      * @return string
      */
-    public function replaceInFile(string $search, string $replace, string $file)
+    public function findPhpStorm()
     {
-        return parent::replaceInFile($search, $replace, $file);
+        $commands = [
+            'Windows' => 'phpstorm.bat',
+            'Linux' => 'phpstorm',
+            'Darwin' => 'open -a "PhpStorm.app"',
+        ];
+
+        return $commands[PHP_OS_FAMILY] . ' ';
     }
 }

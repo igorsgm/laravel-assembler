@@ -122,15 +122,30 @@ class NewExtendedCommand extends Command
             }
         }
 
-        if ($this->composerFile !== $this->newComposerFile) {
-            $this->installComposerScripts = $this->confirm('Install custom scripts on composer.json?', true);
-        }
+        $this->installComposerScripts = $this->confirm('Install custom scripts on composer.json?', true);
+
+        $this->warn(' ✨ Let the Magic Begin.');
 
         if ($this->installLaravelTask()) {
             $this->devDependenciesTasks();
             $this->gitHubTasks();
             $this->composerFileTasks();
+            $this->openProjectTasks();
         }
+    }
+
+    /**
+     * OVERRIDE to always ask the question using the white color.
+     * Just for styling :P
+     * Confirm a question with the user.
+     *
+     * @param string $question
+     * @param bool $default
+     * @return bool
+     */
+    public function confirm($question, $default = false)
+    {
+        return parent::confirm("❓<fg=white> $question</>", $default);
     }
 
     /** Execute the Laravel Installation script from laravel/installer
@@ -222,8 +237,6 @@ class NewExtendedCommand extends Command
             ])->isSuccessful();
         });
 
-//        $this->newLine();
-
         if (!$this->gitInitialize) {
             return true;
         }
@@ -307,24 +320,67 @@ class NewExtendedCommand extends Command
 
         $this->newComposerFile['scripts'] = $scripts;
 
-        return $this->task(' ➤  🆙 <fg=cyan>Updating composer.json</>', function () {
+        $this->task(' ➤  🆙 <fg=cyan>Updating composer.json</>', function () {
             $newComposerString = json_encode($this->newComposerFile,
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             return file_put_contents($this->projectPath . '/composer.json', $newComposerString);
         });
+
+        if ($this->repositoryCreated) {
+            $this->task(' ➤  ☁️  <fg=cyan>Committing last composer.json changes</>', function () {
+                return $this->helper->execOnProject([
+                    'git checkout master --quiet',
+                    'git add .',
+                    'git commit -m "composer.json updated" --no-verify --quiet',
+                    'git push origin master --quiet'
+                ])->isSuccessful();
+            });
+        }
     }
 
     /**
-     * OVERRIDE to always ask the question using the white color.
-     * Just for styling :P
-     * Confirm a question with the user.
-     *
-     * @param string $question
-     * @param bool $default
-     * @return bool
+     * Perform Valet and PhpStorm IDE actions
      */
-    public function confirm($question, $default = false)
+    protected function openProjectTasks()
     {
-        return parent::confirm("❓<fg=white> $question</>", $default);
+        $this->newLine();
+        $this->warn(' ➤  Application 99% ready...');
+        $this->newLine();
+
+        $secureValet = $this->confirm('Apply SSL to the project?' . PHP_EOL . '(Laravel Valet required. Check https://laravel.com/docs/8.x/valet)',
+            true);
+        $openProjectOnPhpStorm = $this->confirm('Open project on PhpStorm?' . PHP_EOL . '(Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html)',
+            true);
+
+        $valetSecured = false;
+        if ($secureValet) {
+            $this->task(' ➤  ⏳ <fg=cyan>Applying local SLL to "' . $this->argument('name') . '"</>',
+                function () use (&$valetSecured) {
+                    $this->newLine();
+                    return ($valetSecured = $this->helper->execOnProject([
+                        'valet secure ' . $this->argument('name')
+                    ])->isSuccessful());
+                });
+        }
+
+        if ($valetSecured) {
+            $this->task(' ➤  🌎 <fg=cyan>Opening project in your browser</>', function () {
+                return $this->helper->execOnProject([
+                    'valet open ' . $this->argument('name')
+                ])->isSuccessful();
+            });
+        }
+
+        if ($openProjectOnPhpStorm) {
+            $this->task(' ➤  🖥  <fg=cyan>Loading project on PhpStorm</>', function () {
+                return $this->helper->execOnProject([
+                    $this->helper->findPhpStorm() . ' .'
+                ])->isSuccessful();
+            });
+        }
+
+        $this->newLine();
+        $this->warn(' ➤  Application 100% ready! Build something amazing.');
+        $this->warn(' ✨ Mischief Managed.');
     }
 }
