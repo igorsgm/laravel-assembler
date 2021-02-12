@@ -78,8 +78,7 @@ class NewExtendedCommand extends Command
      */
     protected function installLaravelTask()
     {
-        $this->task("💻 INSTALLING LARAVEL", function () {
-            $this->newLine();
+        $this->task("- 💻 <fg=cyan>Installing Laravel</>", function () {
             $options = collect($this->options())
                 ->filter()->mapWithKeys(function ($value, $key) {
                     return ["--{$key}" => $value];
@@ -114,31 +113,21 @@ class NewExtendedCommand extends Command
         }
 
         if (!empty($this->devPackagesToInstall)) {
-            $this->task("📚 INSTALLING ADDITIONAL DEV DEPENDENCIES", function () {
-                $this->newLine(2);
+            $this->task("- 📚 <fg=cyan>Installing additional dev dependencies</>", function () {
                 $packages = implode(' ', $this->devPackagesToInstall);
-                return $this->helper->execOnProject($this->helper->findComposer() . ' require --dev ' . $packages);
+                return $this->helper->execOnProject($this->helper->findComposer() . ' require --dev --quiet ' . $packages)
+                    ->isSuccessful();
             });
-
-            $this->newLine();
         }
 
         if ($installPHPCS) {
-            $this->newComposerFile['scripts']['phpcs'] = './vendor/bin/phpcs --standard=phpcs.xml';
-            $this->newComposerFile['scripts']['phpcbf'] = './vendor/bin/phpcbf --standard=phpcs.xml';
+            $this->newComposerFile['scripts']['phpcs'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcs --standard=phpcs.xml';
+            $this->newComposerFile['scripts']['phpcbf'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcbf --standard=phpcs.xml';
             $optimizeScripts[] = "@phpcbf";
 
-            $this->task("📂 CREATING phpcs.xml FILE", function () {
-                return $this->helper->execOnProject($this->helper->copy() . base_path() . '/assets/phpcs.xml ' . $this->projectPath);
+            $this->task("- 📄 <fg=cyan>Creating phpcs.xml file</>", function () {
+                return $this->helper->execOnProject($this->helper->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'phpcs.xml ' . $this->projectPath);
             });
-
-            $this->newLine();
-
-            $this->task("EXECUTING PHPCS", function () {
-                return $this->helper->execOnProject($this->newComposerFile['scripts']['phpcbf']);
-            });
-
-            $this->newLine(2);
         }
 
         if ($installIDEHelper) {
@@ -150,15 +139,13 @@ class NewExtendedCommand extends Command
                 "@php artisan ide-helper:models --write-mixin --ansi --no-interaction"
             );
 
-            $this->task("📂 PUBLISHING VENDOR CONFIG FILES", function () {
-                $this->newLine();
-                return $this->helper->execOnProject(PHP_BINARY . ' artisan vendor:publish --provider="Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider" --tag=config');
+            $this->task("- 📂 <fg=cyan>Publishing vendor config files</>", function () {
+                return $this->helper->execOnProject(PHP_BINARY . ' artisan vendor:publish --provider="Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider" --tag=config --quiet')
+                    ->isSuccessful();
             });
-
-            $this->newLine();
         }
 
-        if (!empty($optimizeScripts) && $this->confirm('Install optimization scripts on composer.json?', true)) {
+        if (!empty($optimizeScripts)) {
             $this->newComposerFile['scripts']['post-update-cmd'] = [
                 "Illuminate\\Foundation\\ComposerScripts::postUpdate",
                 "@optimize"
@@ -167,51 +154,62 @@ class NewExtendedCommand extends Command
         }
     }
 
+    /**
+     *
+     * @return bool
+     */
     protected function gitHubTasks()
     {
-        $this->info('=============== GITHUB ===============');
-        $this->task("UPDATING PROJECT'S .gitignore", function () {
-            $this->newLine();
+        $this->task("- 📄 <fg=cyan>Updating .gitignore</>", function () {
             return $this->helper->execOnProject([
                 'echo ".idea/ \n.phpunit.result.cache \n.phpstorm.meta.php \n_ide_helper.php \n_ide_helper_models.php" >> .gitignore'
-            ]);
+            ])->isSuccessful();
         });
 
         $this->newLine();
-        if ($this->confirm('Create GitHub repository for ' . $this->argument('name') . '? (GitHub CLI required. Check: https://cli.github.com/)', true)) {
-            $this->helper->execOnProject('git init');
-            $this->newLine();
 
-            if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
-                if ($this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?', true)) {
-                    $installHooksScript = [
-                        $this->helper->copy() . 'pre-commit-hook.sh .git/hooks/pre-commit',
-                        'chmod +x .git/hooks/pre-commit',
-                        'chmod +x pre-commit-hook.sh'
-                    ];
+        if (!$this->confirm('Initialize git?', true)) {
+            return true;
+        }
 
-                    $this->task('CREATING PHPCS "pre-commit-hook"', function () use ($installHooksScript) {
-                        $this->newLine();
-                        $this->helper->execOnProject(array_merge(
-                                [$this->helper->copy() . base_path() . '/assets/pre-commit-hook.sh ' . $this->projectPath],
-                                $installHooksScript
-                            )
-                        );
-                    });
+        $this->task("- <fg=cyan>Initializing git</>", function () {
+            return $this->helper->execOnProject('git init --quiet')
+                ->isSuccessful();
+        });
+        $this->newLine();
 
-                    $this->newComposerFile['scripts']['install-hooks'] = $installHooksScript;
-                    $this->newComposerFile['scripts']['pre-install-cmd'] = $this->newComposerFile['scripts']['post-install-cmd'] = ['@install-hooks'];
-                }
-            }
+        if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
+            if ($this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?', true)) {
+                $preCommitHookPath = '.git' . DIRECTORY_SEPARATOR . 'hooks' . DIRECTORY_SEPARATOR . 'pre-commit';
+                $installHooksScript = [
+                    $this->helper->copy() . 'pre-commit-hook.sh ' . $preCommitHookPath,
+                    'chmod +x ' . $preCommitHookPath,
+                    'chmod +x pre-commit-hook.sh'
+                ];
 
-            $this->task('CREATING REPOSITORY', function () {
+                $this->task(' - <fg=cyan>Creating phpcs "pre-commit-hook"</>', function () use ($installHooksScript) {
+                    return $this->helper->execOnProject(array_merge(
+                            [$this->helper->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'pre-commit-hook.sh ' . $this->projectPath],
+                            $installHooksScript
+                        )
+                    )->isSuccessful();
+                });
                 $this->newLine();
-                $this->helper->execOnProject([
+
+                $this->newComposerFile['scripts']['install-hooks'] = $installHooksScript;
+                $this->newComposerFile['scripts']['pre-install-cmd'] = $this->newComposerFile['scripts']['post-install-cmd'] = ['@install-hooks'];
+            }
+        }
+
+        if ($this->confirm('Create GitHub repository for "' . $this->argument('name') . "\"?\n (GitHub CLI required. Check: https://cli.github.com/)", true)) {
+            $this->task('- 🗳  <fg=cyan>Creating repository</>', function () {
+                $this->newLine();
+                return $this->helper->execOnProject([
                     'git add .',
-                    'git commit -m "Initial commit" --no-verify',
+                    'git commit -m "Initial commit" --no-verify --quiet',
                     'gh repo create ' . $this->argument('name') . ' --private -y',
-                    'git push -u origin master'
-                ]);
+                    'git push -u origin master --quiet'
+                ])->isSuccessful();
             });
 
             $this->newLine();
@@ -224,7 +222,7 @@ class NewExtendedCommand extends Command
      */
     protected function composerFileTasks()
     {
-        if ($this->composerFile === $this->newComposerFile) {
+        if ($this->composerFile === $this->newComposerFile || !$this->confirm('Install custom optimization scripts on composer.json?', true)) {
             return true;
         }
 
@@ -251,7 +249,7 @@ class NewExtendedCommand extends Command
 
         $this->newComposerFile['scripts'] = $scripts;
 
-        $this->task("🆙 UPDATING composer.json", function () {
+        $this->task("- 🆙 <fg=cyan>Updating composer.json</>", function () {
             $newComposerString = json_encode($this->newComposerFile,
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             return file_put_contents($this->projectPath . '/composer.json', $newComposerString);
