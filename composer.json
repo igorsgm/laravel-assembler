@@ -13,6 +13,7 @@
     ],
     "require": {
         "php": "^7.3|^8.0",
+        "laminas/laminas-text": "^2.8",
         "laravel-zero/framework": "^8.4",
         "laravel/installer": "^4.1"
     },
