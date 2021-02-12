@@ -52,7 +52,7 @@ class NewExtendedCommand extends Command
 
     /**
      * List of packages that will be installed with the script
-     * @var string
+     * @var array
      */
     private $devPackagesToInstall;
 
@@ -159,6 +159,8 @@ class NewExtendedCommand extends Command
     }
 
     /**
+     * Tasks related to Git/GitHub. All the questions are made first and then the tasks are executed in sequence.
+     * The code looks a bit uglier but the console output looks better doing in this way.
      *
      * @return bool
      */
@@ -172,43 +174,47 @@ class NewExtendedCommand extends Command
 
         $this->newLine();
 
+        // ASKING QUESTIONS
         if (!$this->confirm('Initialize git?', true)) {
             return true;
         }
 
-        $this->task(' ➤  ☁️  <fg=cyan>Initializing git</>', function () {
-            return $this->helper->execOnProject('git init --quiet')
-                ->isSuccessful();
-        });
-
-        $this->newLine();
-
+        $createPreCommitHook = false;
         if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
-            if ($createPreCommitHook = $this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?', true)) {
-                $preCommitHookPath = '.git' . DIRECTORY_SEPARATOR . 'hooks' . DIRECTORY_SEPARATOR . 'pre-commit';
-                $installHooksScript = [
-                    $this->helper->copy() . 'pre-commit-hook.sh ' . $preCommitHookPath,
-                    'chmod +x ' . $preCommitHookPath,
-                    'chmod +x pre-commit-hook.sh'
-                ];
-
-                $this->task(' ➤  📄 <fg=cyan>Creating phpcs "pre-commit-hook"</>',
-                    function () use ($installHooksScript) {
-                        return $this->helper->execOnProject(array_merge(
-                                [$this->helper->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'pre-commit-hook.sh ' . $this->projectPath],
-                                $installHooksScript
-                            )
-                        )->isSuccessful();
-                    });
-                $this->newLine();
-
-                $this->newComposerFile['scripts']['install-hooks'] = $installHooksScript;
-                $this->newComposerFile['scripts']['pre-install-cmd'] = $this->newComposerFile['scripts']['post-install-cmd'] = ['@install-hooks'];
-            }
+            $createPreCommitHook = $this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?',
+                true);
         }
 
-        if ($createRepo = $this->confirm('Create GitHub repository for "' . $this->argument('name') . "\"?" . PHP_EOL . " (GitHub CLI required. Check: https://cli.github.com/)", true)) {
-            $this->task(' ➤  ☁️  <fg=cyan>Creating repository</>', function () {
+        $createRepo = $this->confirm('Create GitHub repository for "' . $this->argument('name') . "\"?"
+            . PHP_EOL . " (GitHub CLI required. Check: https://cli.github.com/)", true);
+
+        // EXECUTING TASKS
+        $this->task(' ➤  ☁️  <fg=cyan>Initializing git</>', function () {
+            return $this->helper->execOnProject('git init --quiet')->isSuccessful();
+        });
+
+        if ($createPreCommitHook) {
+            $preCommitHookPath = '.git' . DIRECTORY_SEPARATOR . 'hooks' . DIRECTORY_SEPARATOR . 'pre-commit';
+            $installHooksScript = [
+                $this->helper->copy() . 'pre-commit-hook.sh ' . $preCommitHookPath,
+                'chmod +x ' . $preCommitHookPath,
+                'chmod +x pre-commit-hook.sh'
+            ];
+
+            $this->task(' ➤  ☁️  <fg=cyan>Creating phpcs "pre-commit-hook"</>', function () use ($installHooksScript) {
+                return $this->helper->execOnProject(array_merge(
+                        [$this->helper->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'pre-commit-hook.sh ' . $this->projectPath],
+                        $installHooksScript
+                    )
+                )->isSuccessful();
+            });
+
+            $this->newComposerFile['scripts']['install-hooks'] = $installHooksScript;
+            $this->newComposerFile['scripts']['pre-install-cmd'] = $this->newComposerFile['scripts']['post-install-cmd'] = ['@install-hooks'];
+        }
+
+        if ($createRepo) {
+            $this->task(' ➤  ☁️  <fg=cyan>Creating private repository</>', function () {
                 $this->newLine();
                 return $this->helper->execOnProject([
                     'git add .',
@@ -217,8 +223,6 @@ class NewExtendedCommand extends Command
                     'git push -u origin master --quiet'
                 ])->isSuccessful();
             });
-
-            $this->newLine();
         }
     }
 
