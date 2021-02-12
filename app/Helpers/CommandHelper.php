@@ -99,7 +99,7 @@ class CommandHelper extends NewCommand
         }
 
         foreach ($commands as $key => $command) {
-            $commands[$key] = '(cd ' . $this->projectPath . ' && ' . $command . ')';
+            $commands[$key] = 'cd ' . $this->projectPath . ' && ' . $command;
         }
 
         return parent::runCommands($commands, $this->input, $this->output);

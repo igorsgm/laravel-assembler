@@ -66,10 +66,12 @@ class NewExtendedCommand extends Command
         $this->projectPath = $commandHelper->projectDirectory($this->argument('name'));
         $this->helper = $commandHelper->setData($this->input, $this->output, $this->projectPath);
 
-        $this->installLaravelTask();
-        $this->devDependenciesTasks();
-        $this->gitHubTasks();
-        $this->composerFileTasks();
+        $this->newLine();
+        if ($this->installLaravelTask()) {
+            $this->devDependenciesTasks();
+            $this->gitHubTasks();
+            $this->composerFileTasks();
+        }
     }
 
     /** Execute the Laravel Installation script from laravel/installer
@@ -78,7 +80,7 @@ class NewExtendedCommand extends Command
      */
     protected function installLaravelTask()
     {
-        $this->task("- 💻 <fg=cyan>Installing Laravel</>", function () {
+        return $this->task(' ➤  💻 <fg=cyan>Installing Laravel</>', function () {
             $options = collect($this->options())
                 ->filter()->mapWithKeys(function ($value, $key) {
                     return ["--{$key}" => $value];
@@ -89,10 +91,7 @@ class NewExtendedCommand extends Command
                 $options
             ));
 
-            $this->composerFile = $this->helper->getProjectComposerFile($this->projectPath);
-            $this->newComposerFile = $this->composerFile;
-
-            return true;
+            return file_exists($this->projectPath);
         });
     }
 
@@ -113,20 +112,24 @@ class NewExtendedCommand extends Command
         }
 
         if (!empty($this->devPackagesToInstall)) {
-            $this->task("- 📚 <fg=cyan>Installing additional dev dependencies</>", function () {
+            $this->task(' ➤  📚 <fg=cyan>Installing additional dev dependencies</>', function () {
                 $packages = implode(' ', $this->devPackagesToInstall);
                 return $this->helper->execOnProject($this->helper->findComposer() . ' require --dev --quiet ' . $packages)
                     ->isSuccessful();
             });
         }
 
+        $this->composerFile = $this->helper->getProjectComposerFile($this->projectPath);
+        $this->newComposerFile = $this->composerFile;
+
         if ($installPHPCS) {
             $this->newComposerFile['scripts']['phpcs'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcs --standard=phpcs.xml';
             $this->newComposerFile['scripts']['phpcbf'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcbf --standard=phpcs.xml';
             $optimizeScripts[] = "@phpcbf";
 
-            $this->task("- 📄 <fg=cyan>Creating phpcs.xml file</>", function () {
-                return $this->helper->execOnProject($this->helper->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'phpcs.xml ' . $this->projectPath);
+            $this->task(' ➤  📄 <fg=cyan>Creating phpcs.xml file</>', function () {
+                return $this->helper->execOnProject($this->helper->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'phpcs.xml ' . $this->projectPath)
+                    ->isSuccessful();
             });
         }
 
@@ -139,7 +142,7 @@ class NewExtendedCommand extends Command
                 "@php artisan ide-helper:models --write-mixin --ansi --no-interaction"
             );
 
-            $this->task("- 📂 <fg=cyan>Publishing vendor config files</>", function () {
+            $this->task(' ➤  📂 <fg=cyan>Publishing vendor config files</>', function () {
                 return $this->helper->execOnProject(PHP_BINARY . ' artisan vendor:publish --provider="Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider" --tag=config --quiet')
                     ->isSuccessful();
             });
@@ -150,6 +153,7 @@ class NewExtendedCommand extends Command
                 "Illuminate\\Foundation\\ComposerScripts::postUpdate",
                 "@optimize"
             ];
+            $this->newComposerFile['scripts']['post-autoload-dump'][] = "@optimize";
             $this->newComposerFile['scripts']['optimize'] = $optimizeScripts;
         }
     }
@@ -160,7 +164,7 @@ class NewExtendedCommand extends Command
      */
     protected function gitHubTasks()
     {
-        $this->task("- 📄 <fg=cyan>Updating .gitignore</>", function () {
+        $this->task(' ➤  📄 <fg=cyan>Updating .gitignore</>', function () {
             return $this->helper->execOnProject([
                 'echo ".idea/ \n.phpunit.result.cache \n.phpstorm.meta.php \n_ide_helper.php \n_ide_helper_models.php" >> .gitignore'
             ])->isSuccessful();
@@ -172,14 +176,15 @@ class NewExtendedCommand extends Command
             return true;
         }
 
-        $this->task("- <fg=cyan>Initializing git</>", function () {
+        $this->task(' ➤  ☁️  <fg=cyan>Initializing git</>', function () {
             return $this->helper->execOnProject('git init --quiet')
                 ->isSuccessful();
         });
+
         $this->newLine();
 
         if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
-            if ($this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?', true)) {
+            if ($createPreCommitHook = $this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?', true)) {
                 $preCommitHookPath = '.git' . DIRECTORY_SEPARATOR . 'hooks' . DIRECTORY_SEPARATOR . 'pre-commit';
                 $installHooksScript = [
                     $this->helper->copy() . 'pre-commit-hook.sh ' . $preCommitHookPath,
@@ -187,13 +192,14 @@ class NewExtendedCommand extends Command
                     'chmod +x pre-commit-hook.sh'
                 ];
 
-                $this->task(' - <fg=cyan>Creating phpcs "pre-commit-hook"</>', function () use ($installHooksScript) {
-                    return $this->helper->execOnProject(array_merge(
-                            [$this->helper->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'pre-commit-hook.sh ' . $this->projectPath],
-                            $installHooksScript
-                        )
-                    )->isSuccessful();
-                });
+                $this->task(' ➤  📄 <fg=cyan>Creating phpcs "pre-commit-hook"</>',
+                    function () use ($installHooksScript) {
+                        return $this->helper->execOnProject(array_merge(
+                                [$this->helper->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'pre-commit-hook.sh ' . $this->projectPath],
+                                $installHooksScript
+                            )
+                        )->isSuccessful();
+                    });
                 $this->newLine();
 
                 $this->newComposerFile['scripts']['install-hooks'] = $installHooksScript;
@@ -201,8 +207,8 @@ class NewExtendedCommand extends Command
             }
         }
 
-        if ($this->confirm('Create GitHub repository for "' . $this->argument('name') . "\"?\n (GitHub CLI required. Check: https://cli.github.com/)", true)) {
-            $this->task('- 🗳  <fg=cyan>Creating repository</>', function () {
+        if ($createRepo = $this->confirm('Create GitHub repository for "' . $this->argument('name') . "\"?" . PHP_EOL . " (GitHub CLI required. Check: https://cli.github.com/)", true)) {
+            $this->task(' ➤  ☁️  <fg=cyan>Creating repository</>', function () {
                 $this->newLine();
                 return $this->helper->execOnProject([
                     'git add .',
@@ -222,7 +228,9 @@ class NewExtendedCommand extends Command
      */
     protected function composerFileTasks()
     {
-        if ($this->composerFile === $this->newComposerFile || !$this->confirm('Install custom optimization scripts on composer.json?', true)) {
+        if ($this->composerFile === $this->newComposerFile ||
+            !$this->confirm('Install custom optimization scripts on composer.json?', true)
+        ) {
             return true;
         }
 
@@ -249,10 +257,24 @@ class NewExtendedCommand extends Command
 
         $this->newComposerFile['scripts'] = $scripts;
 
-        $this->task("- 🆙 <fg=cyan>Updating composer.json</>", function () {
+        return $this->task(' ➤  🆙 <fg=cyan>Updating composer.json</>', function () {
             $newComposerString = json_encode($this->newComposerFile,
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             return file_put_contents($this->projectPath . '/composer.json', $newComposerString);
         });
+    }
+
+    /**
+     * OVERRIDE to always ask the question using the white color.
+     * Just for styling :P
+     * Confirm a question with the user.
+     *
+     * @param string $question
+     * @param bool $default
+     * @return bool
+     */
+    public function confirm($question, $default = false)
+    {
+        return parent::confirm("❓<fg=white> $question</>", $default);
     }
 }
