@@ -185,8 +185,9 @@ class NewExtendedCommand extends Command
                 true);
         }
 
-        $createRepo = $this->confirm('Create GitHub repository for "' . $this->argument('name') . "\"?"
-            . PHP_EOL . " (GitHub CLI required. Check: https://cli.github.com/)", true);
+        if ($createRepo = $this->confirm('Create GitHub repository for "' . $this->argument('name') . "\"?" . PHP_EOL . " (GitHub CLI required. Check: https://cli.github.com/)", true)) {
+            $startGitFlow = $this->confirm('Start git-flow for "' . $this->argument('name') . "\"?" . PHP_EOL . " (gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh/)", true);
+        }
 
         // EXECUTING TASKS
         $this->task(' ➤  ☁️  <fg=cyan>Initializing git</>', function () {
@@ -222,6 +223,13 @@ class NewExtendedCommand extends Command
                     'gh repo create ' . $this->argument('name') . ' --private -y',
                     'git push -u origin master --quiet'
                 ])->isSuccessful();
+            });
+        }
+
+        if ($startGitFlow) {
+            $this->task(' ➤  ☁️  <fg=cyan>Starting git flow</>', function () {
+                $this->newLine();
+                return $this->helper->execOnProject('git flow init -d')->isSuccessful();
             });
         }
     }
