@@ -54,7 +54,38 @@ class NewExtendedCommand extends Command
      * List of packages that will be installed with the script
      * @var array
      */
-    private $devPackagesToInstall;
+    protected $devPackagesToInstall = [];
+
+    /**
+     * Determines if the github repository to the project was created
+     * @var array
+     */
+    protected $repositoryCreated = false;
+
+    /**
+     * @var bool
+     */
+    private $gitInitialize = false;
+
+    /**
+     * @var bool
+     */
+    private $gitCreatePreCommitHook = false;
+
+    /**
+     * @var bool
+     */
+    private $gitCreateRepo = false;
+
+    /**
+     * @var bool
+     */
+    private $gitStartGitFlow = false;
+
+    /**
+     * @var bool
+     */
+    private $installComposerScripts = false;
 
     /**
      * Execute the console command.
@@ -67,6 +98,34 @@ class NewExtendedCommand extends Command
         $this->helper = $commandHelper->setData($this->input, $this->output, $this->projectPath);
 
         $this->newLine();
+
+        if ($this->confirm('Include PHP_CodeSniffer?', true)) {
+            $this->devPackagesToInstall[] = 'squizlabs/php_codesniffer';
+        }
+
+        if ($this->confirm('Include Laravel IDE Helper Generator?', true)) {
+            $this->devPackagesToInstall[] = 'barryvdh/laravel-ide-helper';
+        }
+
+        if ($this->gitInitialize = $this->confirm('Initialize git?', true)) {
+            if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
+                $this->gitCreatePreCommitHook = $this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?',
+                    true);
+            }
+
+            if ($this->gitCreateRepo = $this->confirm('Create GitHub repository for "' . $this->argument('name') . "\"?"
+                . PHP_EOL . " (GitHub CLI required. Check: https://cli.github.com/)", true)
+            ) {
+                $this->gitStartGitFlow = $this->confirm('Start git-flow for "' . $this->argument('name') . "\"?"
+                    . PHP_EOL . " (gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh/)",
+                    true);
+            }
+        }
+
+        if ($this->composerFile !== $this->newComposerFile) {
+            $this->installComposerScripts = $this->confirm('Install custom scripts on composer.json?', true);
+        }
+
         if ($this->installLaravelTask()) {
             $this->devDependenciesTasks();
             $this->gitHubTasks();
@@ -100,16 +159,7 @@ class NewExtendedCommand extends Command
      */
     protected function devDependenciesTasks()
     {
-        $this->devPackagesToInstall = [];
         $optimizeScripts = [];
-
-        if ($installPHPCS = $this->confirm('Install PHP_CodeSniffer?', true)) {
-            $this->devPackagesToInstall[] = 'squizlabs/php_codesniffer';
-        }
-
-        if ($installIDEHelper = $this->confirm('Install Laravel IDE Helper Generator?', true)) {
-            $this->devPackagesToInstall[] = 'barryvdh/laravel-ide-helper';
-        }
 
         if (!empty($this->devPackagesToInstall)) {
             $this->task(' ➤  📚 <fg=cyan>Installing additional dev dependencies</>', function () {
@@ -122,7 +172,7 @@ class NewExtendedCommand extends Command
         $this->composerFile = $this->helper->getProjectComposerFile($this->projectPath);
         $this->newComposerFile = $this->composerFile;
 
-        if ($installPHPCS) {
+        if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
             $this->newComposerFile['scripts']['phpcs'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcs --standard=phpcs.xml';
             $this->newComposerFile['scripts']['phpcbf'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcbf --standard=phpcs.xml';
             $optimizeScripts[] = "@phpcbf";
@@ -133,7 +183,7 @@ class NewExtendedCommand extends Command
             });
         }
 
-        if ($installIDEHelper) {
+        if (in_array('barryvdh/laravel-ide-helper', $this->devPackagesToInstall)) {
             array_unshift($optimizeScripts,
                 "@php artisan optimize:clear --ansi --no-interaction",
                 "@php artisan ide-helper:eloquent",
@@ -172,29 +222,17 @@ class NewExtendedCommand extends Command
             ])->isSuccessful();
         });
 
-        $this->newLine();
+//        $this->newLine();
 
-        // ASKING QUESTIONS
-        if (!$this->confirm('Initialize git?', true)) {
+        if (!$this->gitInitialize) {
             return true;
         }
 
-        $createPreCommitHook = false;
-        if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
-            $createPreCommitHook = $this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?',
-                true);
-        }
-
-        if ($createRepo = $this->confirm('Create GitHub repository for "' . $this->argument('name') . "\"?" . PHP_EOL . " (GitHub CLI required. Check: https://cli.github.com/)", true)) {
-            $startGitFlow = $this->confirm('Start git-flow for "' . $this->argument('name') . "\"?" . PHP_EOL . " (gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh/)", true);
-        }
-
-        // EXECUTING TASKS
         $this->task(' ➤  ☁️  <fg=cyan>Initializing git</>', function () {
             return $this->helper->execOnProject('git init --quiet')->isSuccessful();
         });
 
-        if ($createPreCommitHook) {
+        if ($this->gitCreatePreCommitHook) {
             $preCommitHookPath = '.git' . DIRECTORY_SEPARATOR . 'hooks' . DIRECTORY_SEPARATOR . 'pre-commit';
             $installHooksScript = [
                 $this->helper->copy() . 'pre-commit-hook.sh ' . $preCommitHookPath,
@@ -214,19 +252,21 @@ class NewExtendedCommand extends Command
             $this->newComposerFile['scripts']['pre-install-cmd'] = $this->newComposerFile['scripts']['post-install-cmd'] = ['@install-hooks'];
         }
 
-        if ($createRepo) {
+        if ($this->gitCreateRepo) {
             $this->task(' ➤  ☁️  <fg=cyan>Creating private repository</>', function () {
                 $this->newLine();
-                return $this->helper->execOnProject([
+                $this->repositoryCreated = $this->helper->execOnProject([
                     'git add .',
                     'git commit -m "Initial commit" --no-verify --quiet',
                     'gh repo create ' . $this->argument('name') . ' --private -y',
                     'git push -u origin master --quiet'
                 ])->isSuccessful();
+
+                return $this->repositoryCreated;
             });
         }
 
-        if ($startGitFlow) {
+        if ($this->gitStartGitFlow) {
             $this->task(' ➤  ☁️  <fg=cyan>Starting git flow</>', function () {
                 $this->newLine();
                 return $this->helper->execOnProject('git flow init -d')->isSuccessful();
@@ -240,9 +280,7 @@ class NewExtendedCommand extends Command
      */
     protected function composerFileTasks()
     {
-        if ($this->composerFile === $this->newComposerFile ||
-            !$this->confirm('Install custom optimization scripts on composer.json?', true)
-        ) {
+        if (!$this->installComposerScripts) {
             return true;
         }
 
