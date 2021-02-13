@@ -107,15 +107,15 @@ class NewExtendedCommand extends Command
 
         if ($this->gitInitialize = $this->confirm('Initialize git?', true)) {
             if (in_array($this->additionalPackages['phpcs']['package'], $this->devPackagesToInstall)) {
-                $this->gitCreatePreCommitHook = $this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?', true);
+                $this->gitCreatePreCommitHook = $this->confirm('Create <fg=green>pre-commit-hook</>?', true, 'To validate PHPCS before committing a code.');
             }
 
-            if ($this->gitCreateRepo = $this->confirm('Create GitHub repository for "' . $this->directory . "\"?" . PHP_EOL . " (GitHub CLI required. Check: https://cli.github.com/)", true)) {
-                $this->gitStartGitFlow = $this->confirm('Start git flow for "' . $this->directory . "\"?" . PHP_EOL . " (gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh/)", true);
+            if ($this->gitCreateRepo = $this->confirm('Create GitHub repository for <fg=green>' . $this->directory . '</>?', true, 'GitHub CLI required. Check: https://cli.github.com')) {
+                $this->gitStartGitFlow = $this->confirm('Start git flow for <fg=green>' . $this->directory . '</>?', true, 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
             }
         }
 
-        $this->installComposerScripts = $this->confirm('Install custom scripts on composer.json?', true);
+        $this->installComposerScripts = $this->confirm('Install custom scripts on composer.json?', true, 'To be easier to run PHPCS or generate ide-helper files.');
 
         $this->warn(' ✨ Let the Magic Begin.');
 
@@ -125,6 +125,7 @@ class NewExtendedCommand extends Command
             $this->composerFileTasks();
             $this->openProjectTasks();
 
+            $this->newLine();
             $this->warn(' ➤  Application 100% ready! Build something amazing.');
             $this->warn(' ✨ Mischief Managed.');
         }
@@ -287,8 +288,8 @@ class NewExtendedCommand extends Command
         $this->warn(' ➤  Application 99% ready...');
         $this->newLine();
 
-        $secureValet = $this->confirm('Apply SSL to the project?' . PHP_EOL . '(Laravel Valet required. Check https://laravel.com/docs/8.x/valet)', true);
-        $openProjectOnPhpStorm = $this->confirm('Open project on PhpStorm?' . PHP_EOL . '(Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html)', true);
+        $secureValet = $this->confirm('Apply local SSL to <fg=green>' . $this->directory . '</>?', true, 'Laravel Valet required. Check https://laravel.com/docs/8.x/valet');
+        $openProjectOnPhpStorm = $this->confirm('Open <fg=green>' . $this->directory . '</> on PhpStorm?', true, 'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html');
 
         $valetSecured = $secureValet && $this->taskValetInstallSSL($this->directory);
         if ($valetSecured) {

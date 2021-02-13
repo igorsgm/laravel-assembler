@@ -159,9 +159,9 @@ trait TasksHandler
      */
     public function taskValetInstallSSL($directory)
     {
-        return $this->task(' ➤  ⏳ <fg=cyan>Applying local SSL to "' . $directory . '"</>',
-            function () use ($directory) {
+        return $this->task(' ➤  ⏳ <fg=cyan>Applying local SSL to "' . $directory . '"</>', function () use ($directory) {
                 $this->newLine();
+                $this->line('<fg=#a9a9a9>Your sudo password may be requested at this step.</>');
                 return $this->execOnProject('valet secure ' . $directory)->isSuccessful();
             });
     }

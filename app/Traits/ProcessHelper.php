@@ -35,9 +35,15 @@ trait ProcessHelper
      * @param bool $default
      * @return bool
      */
-    public function confirm($question, $default = false)
+    public function confirm($question, $default = false, $comment = '')
     {
-        return parent::confirm("❓<fg=white> $question</>", $default);
+        $question = "❓<fg=white> $question</>";
+
+        if (!empty($comment)) {
+            $question .= PHP_EOL . " <fg=#a9a9a9>" . $comment . "</>";
+        }
+
+        return parent::confirm($question, $default);
     }
 
     /**
