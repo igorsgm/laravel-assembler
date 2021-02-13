@@ -20,30 +20,30 @@ test('💻 Installed Laravel', function () {
             'no')
         ->assertExitCode(0);
 
-    $this->assertDirectoryExists($this->scaffoldDirectory . '/vendor');
-    $this->assertFileExists($this->scaffoldDirectory . '/.env');
+    $this->assertDirectoryExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . 'vendor');
+    $this->assertFileExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . '.env');
 });
 
 test('📚 Installed additional dev dependencies', function () {
-    $this->assertDirectoryExists($this->scaffoldDirectory . '/vendor/barryvdh/laravel-ide-helper');
-    $this->assertDirectoryExists($this->scaffoldDirectory . '/vendor/squizlabs/php_codesniffer');
+    $this->assertDirectoryExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . 'vendor/barryvdh/laravel-ide-helper');
+    $this->assertDirectoryExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . 'vendor/squizlabs/php_codesniffer');
 });
 
 test('📄 Created phpcs.xml file', function () {
-    $this->assertFileExists($this->scaffoldDirectory . '/phpcs.xml');
+    $this->assertFileExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . 'phpcs.xml');
 });
 
-test('📄 Generated IDE Helper files', function () {
-    $this->assertFileExists($this->scaffoldDirectory . '/.phpstorm.meta.php');
-    $this->assertFileExists($this->scaffoldDirectory . '/_ide_helper.php');
+test('📑 Generated IDE Helper files', function () {
+    $this->assertFileExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . '.phpstorm.meta.php');
+    $this->assertFileExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . '_ide_helper.php');
 });
 
-test('📄 Published vendor config files', function () {
-    $this->assertFileExists($this->scaffoldDirectory . '/config/ide-helper.php');
+test('📂 Published vendor config files', function () {
+    $this->assertFileExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . 'config/ide-helper.php');
 });
 
 test('📄 Updated .gitignore', function () {
-    $gitignore = file_get_contents($this->scaffoldDirectory . '/.gitignore');
+    $gitignore = file_get_contents($this->scaffoldDirectory . DIRECTORY_SEPARATOR . '.gitignore');
 
     $filesIgnoredToCheck = [
         '.idea/',
@@ -59,11 +59,20 @@ test('📄 Updated .gitignore', function () {
 });
 
 test('☁️ Initialized git', function () {
-    $this->assertDirectoryExists($this->scaffoldDirectory . '/.git');
+    $this->assertDirectoryExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . '.git');
 });
 
 test('☁️ Created pre-commit-hook.sh file', function () {
-    $this->assertFileExists($this->scaffoldDirectory . '/pre-commit-hook.sh');
+    $this->assertFileExists($this->scaffoldDirectory . DIRECTORY_SEPARATOR . 'pre-commit-hook.sh');
+});
+
+test('📃 Updated README.md file', function () {
+    $expectedReadMe = file_get_contents(base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'README.md');
+    $expectedReadMe = str_replace('projectName', $this->scaffoldDirectoryName, $expectedReadMe);
+
+    $projectReadMe = file_get_contents($this->scaffoldDirectory . DIRECTORY_SEPARATOR . 'README.md');
+
+    $this->assertEquals($expectedReadMe, $projectReadMe);
 });
 
 test('🆙 Updated composer.json', function () {

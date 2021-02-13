@@ -35,7 +35,7 @@ trait TasksHandler
      */
     public function taskGenerateIdeHelperFiles()
     {
-        return $this->task(' ➤  📄 <fg=cyan>Generating IDE Helper files</>', function () {
+        return $this->task(' ➤  📑 <fg=cyan>Generating IDE Helper files</>', function () {
             return $this->execOnProject([
                 PHP_BINARY . ' artisan ide-helper:eloquent --quiet',
                 PHP_BINARY . ' artisan ide-helper:generate --quiet',
@@ -54,7 +54,7 @@ trait TasksHandler
             $commands[] = PHP_BINARY . ' artisan vendor:publish --provider="' . $provider . '" --tag=config --quiet';
         }
 
-        $this->task(' ➤  📄 <fg=cyan>Publishing vendor config files</>', function () use ($commands) {
+        $this->task(' ➤  📂 <fg=cyan>Publishing vendor config files</>', function () use ($commands) {
             return $this->execOnProject($commands)->isSuccessful();
         });
     }
@@ -128,7 +128,7 @@ trait TasksHandler
      */
     public function taskUpdateReadmeFile($projectName, $projectPath)
     {
-        return $this->task(' ➤  ☁️  <fg=cyan>Updating README.md</>', function () use ($projectName, $projectPath) {
+        return $this->task(' ➤  📃  <fg=cyan>Updating README.md</>', function () use ($projectName, $projectPath) {
             $readMe = file_get_contents(base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'README.md');
             return file_put_contents(
                 $projectPath . '/README.md',
