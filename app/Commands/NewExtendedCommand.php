@@ -247,12 +247,14 @@ class NewExtendedCommand extends Command
         }
 
         if ($this->gitCreateRepo) {
-            $this->repositoryCreated = $this->taskCreatePrivateGitHubRepository();
+            $this->repositoryCreated = $this->taskCreatePrivateGitHubRepository($this->directory);
         }
 
         if ($this->gitStartGitFlow) {
             $this->taskStartGitFlow();
         }
+
+        $this->taskUpdateReadmeFile($this->directory, $this->projectPath);
     }
 
     /**

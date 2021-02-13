@@ -35,7 +35,7 @@ trait TasksHandler
      */
     public function taskGenerateIdeHelperFiles()
     {
-        return $this->task(' ➤  📄 <fg=cyan>Generating IDE Helper files</>', function () {
+        return $this->task(' ➤  📑 <fg=cyan>Generating IDE Helper files</>', function () {
             return $this->execOnProject([
                 PHP_BINARY . ' artisan ide-helper:eloquent --quiet',
                 PHP_BINARY . ' artisan ide-helper:generate --quiet',
@@ -54,7 +54,7 @@ trait TasksHandler
             $commands[] = PHP_BINARY . ' artisan vendor:publish --provider="' . $provider . '" --tag=config --quiet';
         }
 
-        $this->task(' ➤  📄 <fg=cyan>Publishing vendor config files</>', function () use ($commands) {
+        $this->task(' ➤  📂 <fg=cyan>Publishing vendor config files</>', function () use ($commands) {
             return $this->execOnProject($commands)->isSuccessful();
         });
     }
@@ -99,14 +99,14 @@ trait TasksHandler
     /**
      * @return mixed
      */
-    public function taskCreatePrivateGitHubRepository()
+    public function taskCreatePrivateGitHubRepository($repoName)
     {
-        return $this->task(' ➤  ☁️  <fg=cyan>Creating private repository</>', function () {
+        return $this->task(' ➤  ☁️  <fg=cyan>Creating private repository</>', function () use ($repoName) {
             $this->newLine();
             return $this->execOnProject([
                 'git add .',
                 'git commit -m "Initial commit" --no-verify --quiet',
-                'gh repo create ' . $this->directory . ' --private -y',
+                'gh repo create ' . $repoName . ' --private -y',
                 'git push -u origin master --quiet'
             ], true)->isSuccessful();
         });
@@ -120,6 +120,20 @@ trait TasksHandler
         return $this->task(' ➤  ☁️  <fg=cyan>Starting git flow</>', function () {
             $command = 'git flow init -d > ' . (PHP_OS_FAMILY == 'Windows' ? 'NUL' : '/dev/null 2>&1');
             return $this->execOnProject($command, true)->isSuccessful();
+        });
+    }
+
+    /**
+     * @return mixed
+     */
+    public function taskUpdateReadmeFile($projectName, $projectPath)
+    {
+        return $this->task(' ➤  📃  <fg=cyan>Updating README.md</>', function () use ($projectName, $projectPath) {
+            $readMe = file_get_contents(base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'README.md');
+            return file_put_contents(
+                $projectPath . '/README.md',
+                str_replace('projectName', $projectName, $readMe)
+            );
         });
     }
 
@@ -159,7 +173,8 @@ trait TasksHandler
      */
     public function taskValetInstallSSL($directory)
     {
-        return $this->task(' ➤  ⏳ <fg=cyan>Applying local SSL to "' . $directory . '"</>', function () use ($directory) {
+        return $this->task(' ➤  ⏳ <fg=cyan>Applying local SSL to "' . $directory . '"</>',
+            function () use ($directory) {
                 $this->newLine();
                 $this->line('<fg=#a9a9a9>Your sudo password may be requested at this step.</>');
                 return $this->execOnProject('valet secure ' . $directory, true)->isSuccessful();
