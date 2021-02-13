@@ -3,4 +3,4 @@
 /.vscode
 /.vagrant
 .phpunit.result.cache
-/tests-output/my-app/
+tests-output/*
