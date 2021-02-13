@@ -141,9 +141,9 @@ trait TasksHandler
      * @param string $message
      * @return mixed
      */
-    public function taskCommitChangesToGitHub($message)
+    public function taskCommitChangesToGitHubMaster($message)
     {
-        return $this->task(' ➤  ☁️  <fg=cyan>Committing last composer.json changes</>', function () use ($message) {
+        return $this->task(' ➤  ☁️  <fg=cyan>Committing last changes</>', function () use ($message) {
             return $this->execOnProject([
                 'git checkout master --quiet',
                 'git add .',

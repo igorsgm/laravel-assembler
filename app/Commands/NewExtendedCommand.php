@@ -271,11 +271,11 @@ class NewExtendedCommand extends Command
 
         $this->newComposerFile['scripts'] = $scripts;
 
-        if ($this->repositoryCreated) {
-            $this->taskCommitChangesToGitHub('composer.json scripts updated.');
-        }
-
         $this->taskUpdateComposerFile($this->newComposerFile);
+
+        if ($this->repositoryCreated) {
+            $this->taskCommitChangesToGitHubMaster('composer.json scripts updated.');
+        }
     }
 
     /**
