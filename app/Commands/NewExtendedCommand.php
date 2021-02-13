@@ -6,7 +6,6 @@ use App\Traits\ProcessHelper;
 use App\Traits\TasksHandler;
 use Laravel\Installer\Console\NewCommand;
 use LaravelZero\Framework\Commands\Command;
-use LaravelZero\Framework\Components\Logo\FigletString;
 
 class NewExtendedCommand extends Command
 {
@@ -110,22 +109,28 @@ class NewExtendedCommand extends Command
 
         foreach ($this->additionalPackages as $devDependency) {
             $package = $devDependency['package'];
-            if ($this->confirm('Include ' . ($devDependency['title'] ?? $package) . '?', true)) {
+            $question = $this->buildQuestionText('Include ' . ($devDependency['title'] ?? $package) . '?');
+            if ($this->confirm($question, true)) {
                 $this->devPackagesToInstall[] = $package;
             }
         }
 
-        if ($this->gitInitialize = $this->confirm('Initialize git?', true)) {
+        $question = $this->buildQuestionText('Initialize git?');
+        if ($this->gitInitialize = $this->confirm($question, true)) {
             if (in_array($this->additionalPackages['phpcs']['package'], $this->devPackagesToInstall)) {
-                $this->gitCreatePreCommitHook = $this->confirm('Create <fg=green>pre-commit-hook</>?', true, 'To validate PHPCS before committing a code.');
+                $question = $this->buildQuestionText('Create <fg=green>pre-commit-hook</>?', 'To validate PHPCS before committing a code.');
+                $this->gitCreatePreCommitHook = $this->confirm($question, true);
             }
 
-            if ($this->gitCreateRepo = $this->confirm('Create GitHub repository for <fg=green>' . $this->directory . '</>?', true, 'GitHub CLI required. Check: https://cli.github.com')) {
-                $this->gitStartGitFlow = $this->confirm('Start git flow for <fg=green>' . $this->directory . '</>?', true, 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
+            $question = $this->buildQuestionText('Create GitHub repository for <fg=green>' . $this->directory . '</>?', 'GitHub CLI required. Check: https://cli.github.com');
+            if ($this->gitCreateRepo = $this->confirm($question, true)) {
+                $question = $this->buildQuestionText('Start git flow for <fg=green>' . $this->directory . '</>?', 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
+                $this->gitStartGitFlow = $this->confirm($question, true);
             }
         }
 
-        $this->installComposerScripts = $this->confirm('Install custom scripts on composer.json?', true, 'To be easier to run PHPCS or generate ide-helper files.');
+        $question = $this->buildQuestionText('Install custom scripts on composer.json?', 'To be easier to run PHPCS or generate ide-helper files.');
+        $this->installComposerScripts = $this->confirm($question, true);
 
         $this->warn(' ✨ Let the Magic Begin.');
 
@@ -298,8 +303,11 @@ class NewExtendedCommand extends Command
         $this->warn(' ➤  Application 99% ready...');
         $this->newLine();
 
-        $secureValet = $this->confirm('Apply local SSL to <fg=green>' . $this->directory . '</>?', true, 'Laravel Valet required. Check https://laravel.com/docs/8.x/valet');
-        $openProjectOnPhpStorm = $this->confirm('Open <fg=green>' . $this->directory . '</> on PhpStorm?', true, 'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html');
+        $question = $this->buildQuestionText('Apply local SSL to <fg=green>' . $this->directory . '</>?', 'Laravel Valet required. Check https://laravel.com/docs/8.x/valet');
+        $secureValet = $this->confirm($question, true);
+
+        $question = $this->buildQuestionText('Open <fg=green>' . $this->directory . '</> on PhpStorm?', 'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html');
+        $openProjectOnPhpStorm = $this->confirm($question, true);
 
         $valetSecured = $secureValet && $this->taskValetInstallSSL($this->directory);
         if ($valetSecured) {

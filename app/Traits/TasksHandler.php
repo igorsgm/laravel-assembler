@@ -25,7 +25,7 @@ trait TasksHandler
     {
         return $this->task(' ➤  📄 <fg=cyan>Creating phpcs.xml file</>', function () use ($projectPath) {
             $command = $this->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'phpcs.xml ' . $projectPath;
-            return $this->execOnProject($command)->isSuccessful();
+            return $this->execOnProject($command, true)->isSuccessful();
         });
     }
 
@@ -66,7 +66,7 @@ trait TasksHandler
     {
         return $this->task(' ➤  📄 <fg=cyan>Updating .gitignore</>', function () {
             $command = 'echo ".idea/ \n.phpunit.result.cache \n.phpstorm.meta.php \n_ide_helper.php \n_ide_helper_models.php" >> .gitignore';
-            return $this->execOnProject($command)->isSuccessful();
+            return $this->execOnProject($command, true)->isSuccessful();
         });
     }
 
@@ -92,7 +92,7 @@ trait TasksHandler
                     [$this->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'pre-commit-hook.sh ' . $this->projectPath],
                     $installHooksScript
                 );
-                return $this->execOnProject($commands)->isSuccessful();
+                return $this->execOnProject($commands, true)->isSuccessful();
             });
     }
 
@@ -162,7 +162,7 @@ trait TasksHandler
         return $this->task(' ➤  ⏳ <fg=cyan>Applying local SSL to "' . $directory . '"</>', function () use ($directory) {
                 $this->newLine();
                 $this->line('<fg=#a9a9a9>Your sudo password may be requested at this step.</>');
-                return $this->execOnProject('valet secure ' . $directory)->isSuccessful();
+                return $this->execOnProject('valet secure ' . $directory, true)->isSuccessful();
             });
     }
 
@@ -174,7 +174,7 @@ trait TasksHandler
     {
         return $this->task(' ➤  🌎 <fg=cyan>Opening ' . $directory . ' in your browser</>',
             function () use ($directory) {
-                return $this->execOnProject('valet open ' . $directory)->isSuccessful();
+                return $this->execOnProject('valet open ' . $directory, true)->isSuccessful();
             });
     }
 
@@ -191,7 +191,7 @@ trait TasksHandler
         ];
 
         return $this->task(' ➤  🖥  <fg=cyan>Loading project on PhpStorm</>', function () use ($phpStormsByOS) {
-            return $this->execOnProject($phpStormsByOS[PHP_OS_FAMILY] . ' .')->isSuccessful();
+            return $this->execOnProject($phpStormsByOS[PHP_OS_FAMILY] . ' .', true)->isSuccessful();
         });
     }
 }

@@ -27,15 +27,13 @@ trait ProcessHelper
     }
 
     /**
-     * OVERRIDE to always ask the question using the white color.
-     * Just for styling :P
-     * Confirm a question with the user.
+     * Builds the string for a formatted confirmation question
      *
      * @param string $question
-     * @param bool $default
-     * @return bool
+     * @param string $comment
+     * @return string
      */
-    public function confirm($question, $default = false, $comment = '')
+    public function buildQuestionText($question, $comment = '')
     {
         $question = "❓<fg=white> $question</>";
 
@@ -43,7 +41,7 @@ trait ProcessHelper
             $question .= PHP_EOL . " <fg=#a9a9a9>" . $comment . "</>";
         }
 
-        return parent::confirm($question, $default);
+        return $question;
     }
 
     /**
@@ -98,12 +96,12 @@ trait ProcessHelper
             try {
                 $process->setTty(true);
             } catch (RuntimeException $e) {
-                $this->output->writeln('Warning: ' . $e->getMessage());
+                $this->getOutput()->writeln('Warning: ' . $e->getMessage());
             }
         }
 
         $process->run(function ($type, $line) {
-            $this->output->write('    ' . $line);
+            $this->getOutput()->write('    ' . $line);
         });
 
         return $process;
