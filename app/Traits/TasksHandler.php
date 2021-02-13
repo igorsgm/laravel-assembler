@@ -54,7 +54,7 @@ trait TasksHandler
             $commands[] = PHP_BINARY . ' artisan vendor:publish --provider="' . $provider . '" --tag=config --quiet';
         }
 
-        $this->task(' ➤  📂 <fg=cyan>Publishing vendor config files</>', function () use ($commands) {
+        $this->task(' ➤  📄 <fg=cyan>Publishing vendor config files</>', function () use ($commands) {
             return $this->execOnProject($commands)->isSuccessful();
         });
     }
@@ -118,8 +118,8 @@ trait TasksHandler
     public function taskStartGitFlow()
     {
         return $this->task(' ➤  ☁️  <fg=cyan>Starting git flow</>', function () {
-            $this->newLine();
-            return $this->execOnProject('git flow init -d', true)->isSuccessful();
+            $command = 'git flow init -d > ' . (PHP_OS_FAMILY == 'Windows' ? 'NUL' : '/dev/null 2>&1');
+            return $this->execOnProject($command, true)->isSuccessful();
         });
     }
 

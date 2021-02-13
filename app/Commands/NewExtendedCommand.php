@@ -111,7 +111,7 @@ class NewExtendedCommand extends Command
             }
 
             if ($this->gitCreateRepo = $this->confirm('Create GitHub repository for "' . $this->directory . "\"?" . PHP_EOL . " (GitHub CLI required. Check: https://cli.github.com/)", true)) {
-                $this->gitStartGitFlow = $this->confirm('Start git-flow for "' . $this->directory . "\"?" . PHP_EOL . " (gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh/)", true);
+                $this->gitStartGitFlow = $this->confirm('Start git flow for "' . $this->directory . "\"?" . PHP_EOL . " (gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh/)", true);
             }
         }
 
@@ -270,8 +270,6 @@ class NewExtendedCommand extends Command
         }
 
         $this->newComposerFile['scripts'] = $scripts;
-
-        $this->taskUpdateComposerFile($this->newComposerFile);
 
         if ($this->repositoryCreated) {
             $this->taskCommitChangesToGitHub('composer.json scripts updated.');
