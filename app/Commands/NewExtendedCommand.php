@@ -6,6 +6,7 @@ use App\Traits\ProcessHelper;
 use App\Traits\TasksHandler;
 use Laravel\Installer\Console\NewCommand;
 use LaravelZero\Framework\Commands\Command;
+use LaravelZero\Framework\Components\Logo\FigletString;
 
 class NewExtendedCommand extends Command
 {
@@ -93,6 +94,15 @@ class NewExtendedCommand extends Command
      */
     public function handle()
     {
+        $this->warn("
+ _                               _  __      __         _ _
+| |                             | | \ \    / /        | | |
+| |     __ _ _ __ __ ___   _____| |  \ \  / /_ _ _   _| | |_
+| |    / _` | '__/ _` \ \ / / _ \ |   \ \/ / _` | | | | | __|
+| |___| (_| | | | (_| |\ V /  __/ |    \  / (_| | |_| | | |_
+|______\__,_|_|  \__,_| \_/ \___|_|     \/ \__,_|\__,_|_|\__|
+        ");
+
         $this->additionalPackages = config('app.additional-packages.require-dev');
         $this->setDirectoryAndPath($this->argument('name'));
 
