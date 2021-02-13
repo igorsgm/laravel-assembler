@@ -82,26 +82,31 @@ class NewExtendedCommand extends Command
     private $installComposerScripts = false;
 
     /**
+     * @var array
+     */
+    private $additionalPackages;
+
+    /**
      * Execute the console command.
      *
      * @return mixed
      */
     public function handle()
     {
+        $this->additionalPackages = config('app.additional-packages.require-dev');
         $this->setDirectoryAndPath($this->argument('name'));
 
         $this->newLine();
 
-        if ($this->confirm('Include PHP_CodeSniffer?', true)) {
-            $this->devPackagesToInstall[] = 'squizlabs/php_codesniffer';
-        }
-
-        if ($this->confirm('Include Laravel IDE Helper Generator?', true)) {
-            $this->devPackagesToInstall[] = 'barryvdh/laravel-ide-helper';
+        foreach ($this->additionalPackages as $devDependency) {
+            $package = $devDependency['package'];
+            if ($this->confirm('Include ' . ($devDependency['title'] ?? $package) . '?', true)) {
+                $this->devPackagesToInstall[] = $package;
+            }
         }
 
         if ($this->gitInitialize = $this->confirm('Initialize git?', true)) {
-            if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
+            if (in_array($this->additionalPackages['phpcs']['package'], $this->devPackagesToInstall)) {
                 $this->gitCreatePreCommitHook = $this->confirm('Create a "pre-commit-hook" to validate PHPCS before committing a code?', true);
             }
 
@@ -142,7 +147,11 @@ class NewExtendedCommand extends Command
                 $options
             ));
 
-            return file_exists($this->projectPath);
+            if ($projectCreated = file_exists($this->projectPath)) {
+                $this->warn("Actually... Let's set up a few things more 🛠");
+            }
+
+            return $projectCreated;
         });
     }
 
@@ -160,15 +169,15 @@ class NewExtendedCommand extends Command
         $this->composerFile = $this->getProjectComposerFile($this->projectPath);
         $this->newComposerFile = $this->composerFile;
 
-        if (in_array('squizlabs/php_codesniffer', $this->devPackagesToInstall)) {
+        if (in_array($this->additionalPackages['phpcs']['package'], $this->devPackagesToInstall)) {
             $this->newComposerFile['scripts']['phpcs'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcs --standard=phpcs.xml';
             $this->newComposerFile['scripts']['phpcbf'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcbf --standard=phpcs.xml';
             $optimizeScripts[] = "@phpcbf";
 
-            $this->taskCreatePhpCsXmlFile($this->directory);
+            $this->taskCreatePhpCsXmlFile($this->projectPath);
         }
 
-        if (in_array('barryvdh/laravel-ide-helper', $this->devPackagesToInstall)) {
+        if (in_array($this->additionalPackages['ide-helper']['package'], $this->devPackagesToInstall)) {
             array_unshift($optimizeScripts,
                 "@php artisan optimize:clear --ansi --no-interaction",
                 "@php artisan ide-helper:eloquent",
@@ -177,7 +186,8 @@ class NewExtendedCommand extends Command
                 "@php artisan ide-helper:models --write-mixin --ansi --no-interaction"
             );
 
-            $this->taskPublishVendorConfigFiles(['Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider']);
+            $this->taskGenerateIdeHelperFiles();
+            $this->taskPublishVendorConfigFiles([$this->additionalPackages['ide-helper']['provider']]);
         }
 
         if (!empty($optimizeScripts)) {
@@ -266,6 +276,8 @@ class NewExtendedCommand extends Command
         if ($this->repositoryCreated) {
             $this->taskCommitChangesToGitHub('composer.json scripts updated.');
         }
+
+        $this->taskUpdateComposerFile($this->newComposerFile);
     }
 
     /**
@@ -281,7 +293,6 @@ class NewExtendedCommand extends Command
         $openProjectOnPhpStorm = $this->confirm('Open project on PhpStorm?' . PHP_EOL . '(Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html)', true);
 
         $valetSecured = $secureValet && $this->taskValetInstallSSL($this->directory);
-
         if ($valetSecured) {
             $this->taskValetOpenProjectOnBrowser($this->directory);
         }

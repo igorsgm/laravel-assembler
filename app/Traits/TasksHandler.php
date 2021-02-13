@@ -18,14 +18,29 @@ trait TasksHandler
     }
 
     /**
-     * @param string $directory
+     * @param string $projectPath
      * @return mixed
      */
-    public function taskCreatePhpCsXmlFile($directory)
+    public function taskCreatePhpCsXmlFile($projectPath)
     {
-        return $this->task(' ➤  📄 <fg=cyan>Creating phpcs.xml file</>', function () use ($directory) {
-            $command = $this->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'phpcs.xml ' . $directory;
+        return $this->task(' ➤  📄 <fg=cyan>Creating phpcs.xml file</>', function () use ($projectPath) {
+            $command = $this->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'phpcs.xml ' . $projectPath;
             return $this->execOnProject($command)->isSuccessful();
+        });
+    }
+
+    /**
+     * @param string $projectPath
+     * @return mixed
+     */
+    public function taskGenerateIdeHelperFiles()
+    {
+        return $this->task(' ➤  📄 <fg=cyan>Generating IDE Helper files</>', function () {
+            return $this->execOnProject([
+                PHP_BINARY . ' artisan ide-helper:eloquent --quiet',
+                PHP_BINARY . ' artisan ide-helper:generate --quiet',
+                PHP_BINARY . ' artisan ide-helper:meta --quiet',
+            ])->isSuccessful();
         });
     }
 

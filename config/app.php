@@ -57,4 +57,30 @@ return [
         App\Providers\AppServiceProvider::class,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Additional Packages to Install
+    |--------------------------------------------------------------------------
+    |
+    | This array contains the list of composer packages that the user will
+    | be asked whether they wish to install or not.
+    | The packages under 'require-dev' will be installed as --dev only.
+    |
+    */
+
+    'additional-packages' => [
+
+        'require-dev' => [
+            'phpcs' => [
+                'title' => 'PHP_CodeSniffer',
+                'package' => 'squizlabs/php_codesniffer',
+            ],
+            'ide-helper' => [
+                'title' => 'Laravel IDE Helper',
+                'package' => 'barryvdh/laravel-ide-helper',
+                'provider' => 'Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider',
+            ]
+        ],
+    ],
+
 ];
