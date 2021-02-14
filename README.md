@@ -63,4 +63,4 @@ laravel-assembler new my-cool-project-name
 
 ## ⚙️ Available commands
 
-<p align="center"><img src="https://user-images.githubusercontent.com/14129843/107869309-99f79000-6e41-11eb-85ec-6a3eb7bfa261.png" /></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/14129843/107869503-c57b7a00-6e43-11eb-9298-7de408074fdb.png" /></p>
