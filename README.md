@@ -1,6 +1,4 @@
-<p align="center">
-    <img title="Laravel Zero" height="100" src="https://user-images.githubusercontent.com/14129843/107854857-a34a1380-6dd3-11eb-8a8e-60c193fa7078.png" />
-</p>
+# 🧰 Laravel Assembler
 
 <p align="center">
   <a href="https://github.com/laravel-zero/framework/actions"><img src="https://img.shields.io/github/workflow/status/laravel-zero/framework/Tests.svg" alt="Build Status"></img></a>
@@ -9,32 +7,38 @@
   <a href="https://packagist.org/packages/laravel-zero/framework"><img src="https://img.shields.io/packagist/l/laravel-zero/framework.svg" alt="License"></a>
 </p>
 
-<p align="center"></p>
+<p align="center">An extended <a href="https://github.com/laravel/installer" target="_blank">Laravel Installer</a> CLI that gives you the power to scaffold a new Laravel project and set up a git repository <b>in a single command</b>.</p>
 
 <hr/>
 
-<h4> <center>This is a <bold>community project</bold> and not an official Laravel one </center></h4>
-
-Laravel Zero was created by, and is maintained by [Nuno Maduro](https://github.com/nunomaduro), and is a micro-framework that provides an elegant starting point for your console application. It is an **unofficial** and customized version of Laravel optimized for building command-line applications.
-
-- Built on top of the [Laravel](https://laravel.com) components.
-- Optional installation of Laravel [Eloquent](https://laravel-zero.com/docs/database/), Laravel [Logging](https://laravel-zero.com/docs/logging/) and many others.
-- Supports interactive [menus](https://laravel-zero.com/docs/build-interactive-menus/) and [desktop notifications](https://laravel-zero.com/docs/send-desktop-notifications/) on Linux, Windows & MacOS.
-- Ships with a [Scheduler](https://laravel-zero.com/docs/task-scheduling/) and  a [Standalone Compiler](https://laravel-zero.com/docs/build-a-standalone-application/).
-- Integration with [Collision](https://github.com/nunomaduro/collision) - Beautiful error reporting
+## ✨ Features
+- **Simple** setup process
+- Integrate with [Laravel IDE Helper Generator](https://github.com/barryvdh/laravel-ide-helper) to improve code completion in your IDE   
+- Integrate with [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) to improve the code quality of your project
+- Setup a **GitHub repository** with and easy to customize README
+- Setup [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) 
+- Create a git pre-commit-hook to validate PHPCS before committing a code  
+- Custom **composer scripts** to make your live simpler
+- [Laravel Valet](https://laravel.com/docs/master/valet) integration: secure your project with SSL
+- Open the project automatically in your browser + PhpStorm once the installation finishes 
+- Don't want to use any of the above features? **No problem**, all are optional.
 
 ------
 
-## Documentation
+## 0️⃣ Requirements
 
-For full documentation, visit [laravel-zero.com](https://laravel-zero.com/).
+- Mandatory:
+    - PHP 7.3 or higher
+    - Composer
+    
+    > Make sure to place Composer's system-wide vendor bin directory in your $PATH so the `laravel-assembler` executable can be located by your system.
+    This directory exists in different locations based on your operating system; however, some common locations include:
+    > - macOS: `$HOME/.composer/vendor/bin`
+    > - Windows: `%USERPROFILE%\AppData\Roaming\Composer\vendor\bin`
+    > - GNU / Linux Distributions: `$HOME/.config/composer/vendor/bin` or `$HOME/.composer/vendor/bin`
 
-## Support the development
-**Do you like this project? Support it by donating**
-
-- PayPal: [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=66BYDWAT92N6L)
-- Patreon: [Donate](https://www.patreon.com/nunomaduro)
-
-## License
-
-Laravel Zero is an open-source software licensed under the MIT license.
+- Optional:
+    - [GitHub CLI](https://cli.github.com) with your user properly [logged in](https://cli.github.com/manual/gh_auth_login): to create the repository for your new project -- *the logged in user is going to be the owner of the repo*.
+    - [gitflow-avh](https://github.com/petervanderdoes/gitflow-avh): to start git flow in your project.
+    - [Laravel Valet](https://laravel.com/docs/master/valet): to set up a SSL certificate and open the project in the browser automatically.
+    - [Jetbrains CLI's](https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html) Launcher for a standalone instance: if you wish to open the project immediately on PhpStorm.   
