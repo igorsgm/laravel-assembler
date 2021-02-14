@@ -4,6 +4,7 @@ namespace Tests;
 
 use App\Traits\ProcessHelper;
 use Illuminate\Contracts\Console\Kernel;
+use Storage;
 
 trait CreatesApplication
 {

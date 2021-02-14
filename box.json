@@ -2,7 +2,7 @@
     "chmod": "0755",
     "directories": [
         "app",
-        "assets",
+        "storage",
         "bootstrap",
         "config",
         "vendor"
