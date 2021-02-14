@@ -1,9 +1,8 @@
 {
     "name": "igorsgm/laravel-assembler",
-    "description": "Laravel application installer extended.",
-    "keywords": ["framework", "laravel", "installer", "extended","console", "cli"],
-    "homepage": "https://igormoraes.com",
-    "type": "project",
+    "description": "🧰 • An extended Laravel Installer CLI that gives you the power to scaffold a new Laravel project with some neat add-ons and set up a git repository in a single command.",
+    "keywords": ["cli", "console", "php", "laravel", "framework", "installer", "artisan", "extended"],
+    "homepage": "https://github.com/igorsgm/laravel-assembler",
     "license": "MIT",
     "authors": [
         {
