@@ -21,7 +21,7 @@ Don't want to use any of the above features? **No problem**, all are optional.
 
 ------
 
-## 0️⃣ Requirements
+## 1️⃣ Requirements
 
 - Mandatory:
     - PHP 7.3 or higher
@@ -39,13 +39,13 @@ Don't want to use any of the above features? **No problem**, all are optional.
     - [Laravel Valet](https://laravel.com/docs/master/valet): to set up a SSL certificate and open the project in the browser automatically.
     - [Jetbrains CLI's](https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html) Launcher for a standalone instance: if you wish to open the project immediately on PhpStorm.   
 
-## 1️⃣ Installation
+## 2️⃣ Installation
 
 ```sh
 composer global require igorsgm/laravel-assembler
 ```
 
-## 🚀 Creating a new project
+## 3️⃣ 🚀 Creating a new project
 
 ```sh
 laravel-assembler new my-cool-project-name
