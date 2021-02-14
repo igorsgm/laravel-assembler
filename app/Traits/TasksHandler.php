@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use Storage;
+
 trait TasksHandler
 {
     /**
@@ -24,7 +26,7 @@ trait TasksHandler
     public function taskCreatePhpCsXmlFile($projectPath)
     {
         return $this->task(' ➤  📄 <fg=cyan>Creating phpcs.xml file</>', function () use ($projectPath) {
-            $command = $this->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'phpcs.xml ' . $projectPath;
+            $command = $this->copy() . Storage::path('phpcs.xml') . " $projectPath";
             return $this->execOnProject($command, true)->isSuccessful();
         });
     }
@@ -89,7 +91,7 @@ trait TasksHandler
         return $this->task(' ➤  ☁️  <fg=cyan>Creating phpcs "pre-commit-hook"</>',
             function () use ($installHooksScript) {
                 $commands = array_merge(
-                    [$this->copy() . base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'pre-commit-hook.sh ' . $this->projectPath],
+                    [$this->copy() . Storage::path('pre-commit-hook.sh') . " $this->projectPath"],
                     $installHooksScript
                 );
                 return $this->execOnProject($commands, true)->isSuccessful();
@@ -129,11 +131,8 @@ trait TasksHandler
     public function taskUpdateReadmeFile($projectName, $projectPath)
     {
         return $this->task(' ➤  📃  <fg=cyan>Updating README.md</>', function () use ($projectName, $projectPath) {
-            $readMe = file_get_contents(base_path() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'README.md');
-            return file_put_contents(
-                $projectPath . '/README.md',
-                str_replace('projectName', $projectName, $readMe)
-            );
+            $readMe = str_replace('projectName', $projectName, Storage::get('README.md'));
+            return file_put_contents($projectPath . '/README.md', $readMe);
         });
     }
 
