@@ -38,6 +38,21 @@ $app->singleton(
 
 /*
 |--------------------------------------------------------------------------
+| Set Storage Path
+|--------------------------------------------------------------------------
+|
+| This script allows us to override the default
+| storage location used while running the built app.
+|
+*/
+
+if (Phar::running()) {
+    $builds = dirname(Phar::running(false));
+    $app->useStoragePath($builds . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'storage');
+}
+
+/*
+|--------------------------------------------------------------------------
 | Return The Application
 |--------------------------------------------------------------------------
 |
