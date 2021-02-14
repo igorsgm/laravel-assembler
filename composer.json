@@ -1,5 +1,5 @@
 {
-    "name": "igorsgm/laravel-vault",
+    "name": "igorsgm/laravel-assembler",
     "description": "Laravel application installer extended.",
     "keywords": ["framework", "laravel", "installer", "extended","console", "cli"],
     "homepage": "https://igormoraes.com",
@@ -39,5 +39,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "bin": ["vault"]
+    "bin": ["laravel-assembler"]
 }

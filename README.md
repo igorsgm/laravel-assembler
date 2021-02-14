@@ -1,5 +1,5 @@
 <p align="center">
-    <img title="Laravel Zero" height="100" src="https://raw.githubusercontent.com/laravel-zero/docs/master/images/logo/laravel-zero-readme.png" />
+    <img title="Laravel Zero" height="100" src="https://user-images.githubusercontent.com/14129843/107854857-a34a1380-6dd3-11eb-8a8e-60c193fa7078.png" />
 </p>
 
 <p align="center">
@@ -8,6 +8,10 @@
   <a href="https://packagist.org/packages/laravel-zero/framework"><img src="https://img.shields.io/packagist/v/laravel-zero/framework.svg?label=stable" alt="Latest Stable Version"></a>
   <a href="https://packagist.org/packages/laravel-zero/framework"><img src="https://img.shields.io/packagist/l/laravel-zero/framework.svg" alt="License"></a>
 </p>
+
+<p align="center"></p>
+
+<hr/>
 
 <h4> <center>This is a <bold>community project</bold> and not an official Laravel one </center></h4>
 
