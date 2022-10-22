@@ -46,12 +46,14 @@ class NewExtendedCommand extends Command
 
     /**
      * List of packages that will be installed with the script
+     *
      * @var array
      */
     protected $devPackagesToInstall = [];
 
     /**
      * Determines if the github repository to the project was created
+     *
      * @var array
      */
     protected $repositoryCreated = false;
@@ -110,8 +112,9 @@ class NewExtendedCommand extends Command
 
         foreach ($this->additionalPackages as $devDependency) {
             $package = $devDependency['package'];
-            $question = $this->buildQuestionText('Include ' . ($devDependency['title'] ?? $package) . '?');
-            if ($this->confirm($question, true)) {
+            $question = $this->buildQuestionText('Include '.($devDependency['title'] ?? $package).'?');
+            $defaultAnswer = isset($devDependency['default-answer']) ? $devDependency['default-answer'] : true;
+            if ($this->confirm($question, $defaultAnswer)) {
                 $this->devPackagesToInstall[] = $package;
             }
         }
@@ -123,14 +126,14 @@ class NewExtendedCommand extends Command
                 $this->gitCreatePreCommitHook = $this->confirm($question, true);
             }
 
-            $question = $this->buildQuestionText('Create GitHub repository for <fg=green>' . $this->directory . '</>?', 'GitHub CLI required. Check: https://cli.github.com');
+            $question = $this->buildQuestionText('Create GitHub repository for <fg=green>'.$this->projectBaseName.'</>?', 'GitHub CLI required. Check: https://cli.github.com');
             if ($this->gitCreateRepo = $this->confirm($question, true)) {
-                $question = $this->buildQuestionText('Start git flow for <fg=green>' . $this->directory . '</>?', 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
+                $question = $this->buildQuestionText('Start git flow for <fg=green>'.$this->projectBaseName.'</>?', 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
                 $this->gitStartGitFlow = $this->confirm($question, true);
             }
         }
 
-        $question = $this->buildQuestionText('Install custom scripts on composer.json?', 'To be easier to run PHPCS or generate ide-helper files.');
+        $question = $this->buildQuestionText('Install custom scripts on composer.json?', 'To be easier to run Pint, PHPCS or generate ide-helper files.');
         $this->installComposerScripts = $this->confirm($question, true);
 
         $this->warn(' ✨ Let the Magic Begin.');
@@ -143,12 +146,13 @@ class NewExtendedCommand extends Command
 
             $this->newLine();
             $this->warn(' ➤  Application 100% ready! Build something amazing.');
-            $this->warn(' ✨ Mischief Managed.');
+            $this->warn(' ✨  Mischief Managed.');
         }
     }
 
     /** Execute the Laravel Installation script from laravel/installer
      * @see https://github.com/laravel/installer
+     *
      * @return int
      */
     protected function installLaravelTask()
@@ -179,42 +183,48 @@ class NewExtendedCommand extends Command
     {
         $optimizeScripts = [];
 
-        if (!empty($this->devPackagesToInstall)) {
+        if (! empty($this->devPackagesToInstall)) {
             $this->taskInstallDevPackages($this->devPackagesToInstall);
         }
 
         $this->composerFile = $this->getProjectComposerFile($this->projectPath);
         $this->newComposerFile = $this->composerFile;
 
+        $this->newComposerFile['scripts']['pint'] = $this->vendorBin('pint');
+
         if (in_array($this->additionalPackages['phpcs']['package'], $this->devPackagesToInstall)) {
-            $this->newComposerFile['scripts']['phpcs'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcs --standard=phpcs.xml';
-            $this->newComposerFile['scripts']['phpcbf'] = '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'phpcbf --standard=phpcs.xml';
-            $optimizeScripts[] = "@phpcbf";
+            $this->newComposerFile['scripts']['phpcs'] = $this->vendorBin('phpcs --standard=phpcs.xml');
+            $this->newComposerFile['scripts']['phpcbf'] = $this->vendorBin('phpcbf --standard=phpcs.xml');
+            $optimizeScripts[] = '@phpcbf';
 
             $this->taskCreatePhpCsXmlFile($this->projectPath);
+        } else {
+            $optimizeScripts[] = '@pint';
         }
 
         if (in_array($this->additionalPackages['ide-helper']['package'], $this->devPackagesToInstall)) {
             array_unshift($optimizeScripts,
-                "@php artisan optimize:clear --ansi --no-interaction",
-                "@php artisan ide-helper:eloquent",
-                "@php artisan ide-helper:generate",
-                "@php artisan ide-helper:meta",
-                "@php artisan ide-helper:models --write-mixin --ansi --no-interaction"
+                '@php artisan optimize:clear --ansi --no-interaction',
+                '@php artisan ide-helper:eloquent',
+                '@php artisan ide-helper:generate',
+                '@php artisan ide-helper:meta',
+                '@php artisan ide-helper:models --write-mixin --ansi --no-interaction'
             );
 
             $this->taskGenerateIdeHelperFiles();
             $this->taskPublishVendorConfigFiles([$this->additionalPackages['ide-helper']['provider']]);
         }
 
-        if (!empty($optimizeScripts)) {
+        if (! empty($optimizeScripts)) {
             $this->newComposerFile['scripts']['post-update-cmd'] = [
-                "Illuminate\\Foundation\\ComposerScripts::postUpdate",
-                "@optimize"
+                'Illuminate\\Foundation\\ComposerScripts::postUpdate',
+                '@optimize',
             ];
-            $this->newComposerFile['scripts']['post-autoload-dump'][] = "@optimize";
+            $this->newComposerFile['scripts']['post-autoload-dump'][] = '@optimize';
             $this->newComposerFile['scripts']['optimize'] = $optimizeScripts;
         }
+
+        $this->taskLaravelPint();
     }
 
     /**
@@ -227,18 +237,18 @@ class NewExtendedCommand extends Command
     {
         $this->taskUpdateGitIgnore();
 
-        if (!$this->gitInitialize) {
+        if (! $this->gitInitialize) {
             return false;
         }
 
         $this->taskInitializeGit();
 
         if ($this->gitCreatePreCommitHook) {
-            $preCommitHookPath = '.git' . DIRECTORY_SEPARATOR . 'hooks' . DIRECTORY_SEPARATOR . 'pre-commit';
+            $preCommitHookPath = '.git'.DIRECTORY_SEPARATOR.'hooks'.DIRECTORY_SEPARATOR.'pre-commit';
             $installHooksScript = [
-                $this->copy() . 'pre-commit-hook.sh ' . $preCommitHookPath,
-                'chmod +x ' . $preCommitHookPath,
-                'chmod +x pre-commit-hook.sh'
+                $this->copy().'pre-commit-hook.sh '.$preCommitHookPath,
+                'chmod +x '.$preCommitHookPath,
+                'chmod +x pre-commit-hook.sh',
             ];
 
             $this->taskCreatePhpCsPreCommitHook($installHooksScript);
@@ -248,14 +258,14 @@ class NewExtendedCommand extends Command
         }
 
         if ($this->gitCreateRepo) {
-            $this->repositoryCreated = $this->taskCreatePrivateGitHubRepository($this->directory);
+            $this->repositoryCreated = $this->taskCreatePrivateGitHubRepository($this->projectBaseName);
         }
 
         if ($this->gitStartGitFlow) {
             $this->taskStartGitFlow();
         }
 
-        $this->taskUpdateReadmeFile($this->directory, $this->projectPath);
+        $this->taskUpdateReadmeFile($this->projectBaseName, $this->projectPath);
     }
 
     /**
@@ -263,7 +273,7 @@ class NewExtendedCommand extends Command
      */
     public function composerFileTasks()
     {
-        if (!$this->installComposerScripts) {
+        if (! $this->installComposerScripts) {
             return false;
         }
 
@@ -277,7 +287,8 @@ class NewExtendedCommand extends Command
             'post-install-cmd',
             'phpcs',
             'phpcbf',
-            'optimize'
+            'pint',
+            'optimize',
         ];
 
         // Making sure that the scripts will come in a nice order
@@ -306,15 +317,15 @@ class NewExtendedCommand extends Command
         $this->warn(' ➤  Application 99% ready...');
         $this->newLine();
 
-        $question = $this->buildQuestionText('Apply local SSL to <fg=green>' . $this->directory . '</>?', 'Laravel Valet required. Check https://laravel.com/docs/8.x/valet');
+        $question = $this->buildQuestionText('Apply local SSL to <fg=green>'.$this->projectBaseName.'</>?', 'Laravel Valet required. Check https://laravel.com/docs/master/valet');
         $secureValet = $this->confirm($question, true);
 
-        $question = $this->buildQuestionText('Open <fg=green>' . $this->directory . '</> on PhpStorm?', 'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html');
+        $question = $this->buildQuestionText('Open <fg=green>'.$this->projectBaseName.'</> on PhpStorm?', 'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html');
         $openProjectOnPhpStorm = $this->confirm($question, true);
 
-        $valetSecured = $secureValet && $this->taskValetInstallSSL($this->directory);
+        $valetSecured = $secureValet && $this->taskValetInstallSSL($this->projectBaseName);
         if ($valetSecured) {
-            $this->taskValetOpenProjectOnBrowser($this->directory);
+            $this->taskValetOpenProjectOnBrowser($this->projectBaseName);
         }
 
         if ($openProjectOnPhpStorm) {

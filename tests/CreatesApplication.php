@@ -4,7 +4,6 @@ namespace Tests;
 
 use App\Traits\ProcessHelper;
 use Illuminate\Contracts\Console\Kernel;
-use Storage;
 
 trait CreatesApplication
 {
@@ -27,12 +26,12 @@ trait CreatesApplication
      */
     public function createApplication()
     {
-        $app = require __DIR__ . '/../bootstrap/app.php';
+        $app = require __DIR__.'/../bootstrap/app.php';
 
         $app->make(Kernel::class)->bootstrap();
 
         $this->scaffoldDirectoryName = 'tests-output/my-app';
-        $this->scaffoldDirectory = __DIR__ . '/../' . $this->scaffoldDirectoryName;
+        $this->scaffoldDirectory = __DIR__.'/../'.$this->scaffoldDirectoryName;
 
         return $app;
     }
