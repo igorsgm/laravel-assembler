@@ -74,12 +74,14 @@ return [
             'phpcs' => [
                 'title' => 'PHP_CodeSniffer',
                 'package' => 'squizlabs/php_codesniffer',
+                'default-answer' => false,
             ],
             'ide-helper' => [
                 'title' => 'Laravel IDE Helper',
                 'package' => 'barryvdh/laravel-ide-helper',
                 'provider' => 'Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider',
-            ]
+                'default-answer' => true,
+            ],
         ],
     ],
 

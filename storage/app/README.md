@@ -50,4 +50,4 @@ Now you should be able to access [https://your-project-url/](https://your-projec
 
 ## Stack
 
-- [Laravel 8](https://laravel.com/)
+- [Laravel](https://laravel.com/)
