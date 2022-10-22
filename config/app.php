@@ -81,7 +81,7 @@ return [
                 'package' => 'barryvdh/laravel-ide-helper',
                 'provider' => 'Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider',
                 'default-answer' => true,
-            ]
+            ],
         ],
     ],
 

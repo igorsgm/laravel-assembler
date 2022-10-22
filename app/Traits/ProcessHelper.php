@@ -23,28 +23,28 @@ trait ProcessHelper
     public $projectPath;
 
     /**
-     * @param string $directoryName
+     * @param  string  $directoryName
      */
     public function setDirectoryAndPath($directoryName)
     {
         $this->directory = $directoryName;
         $this->projectBaseName = basename($directoryName);
-        $this->projectPath = $directoryName !== '.' ? getcwd() . '/' . $directoryName : '.';
+        $this->projectPath = $directoryName !== '.' ? getcwd().'/'.$directoryName : '.';
     }
 
     /**
      * Builds the string for a formatted confirmation question
      *
-     * @param string $question
-     * @param string $comment
+     * @param  string  $question
+     * @param  string  $comment
      * @return string
      */
     public function buildQuestionText($question, $comment = '')
     {
         $question = "❓<fg=white> $question</>";
 
-        if (!empty($comment)) {
-            $question .= PHP_EOL . " <fg=#a9a9a9>" . $comment . "</>";
+        if (! empty($comment)) {
+            $question .= PHP_EOL.' <fg=#a9a9a9>'.$comment.'</>';
         }
 
         return $question;
@@ -53,8 +53,8 @@ trait ProcessHelper
     /**
      * Run the given commands inside the project's directory
      *
-     * @param string|array $commands
-     * @param false $ignoreOptions
+     * @param  string|array  $commands
+     * @param  false  $ignoreOptions
      * @return Process
      */
     public function execOnProject($commands, $ignoreOptions = false)
@@ -65,34 +65,34 @@ trait ProcessHelper
     /**
      * Run the given commands.
      *
-     * @param array|string $commands
-     * @param string|null $cwd The working directory or null to use the working dir of the current PHP process
-     * @param bool $ignoreOptions
+     * @param  array|string  $commands
+     * @param  string|null  $cwd The working directory or null to use the working dir of the current PHP process
+     * @param  bool  $ignoreOptions
      * @return Process
      */
     public function exec($commands, $cwd = null, $ignoreOptions = false)
     {
-        if (!is_array($commands)) {
+        if (! is_array($commands)) {
             $commands = [$commands];
         }
 
-        if (!$ignoreOptions && $this->input->getOption('no-ansi')) {
+        if (! $ignoreOptions && $this->input->getOption('no-ansi')) {
             $commands = array_map(function ($value) {
                 if (substr($value, 0, 5) === 'chmod') {
                     return $value;
                 }
 
-                return $value . ' --no-ansi';
+                return $value.' --no-ansi';
             }, $commands);
         }
 
-        if (!$ignoreOptions && $this->input->getOption('quiet')) {
+        if (! $ignoreOptions && $this->input->getOption('quiet')) {
             $commands = array_map(function ($value) {
                 if (substr($value, 0, 5) === 'chmod') {
                     return $value;
                 }
 
-                return $value . ' --quiet';
+                return $value.' --quiet';
             }, $commands);
         }
 
@@ -102,12 +102,12 @@ trait ProcessHelper
             try {
                 $process->setTty(true);
             } catch (RuntimeException $e) {
-                $this->getOutput()->writeln('Warning: ' . $e->getMessage());
+                $this->getOutput()->writeln('Warning: '.$e->getMessage());
             }
         }
 
         $process->run(function ($type, $line) {
-            $this->getOutput()->write('    ' . $line);
+            $this->getOutput()->write('    '.$line);
         });
 
         return $process;
@@ -115,11 +115,12 @@ trait ProcessHelper
 
     /**
      * The copy command based on OS type
+     *
      * @return string
      */
     public function copy()
     {
-        return (PHP_OS_FAMILY == 'Windows' ? 'copy ' : 'cp ');
+        return PHP_OS_FAMILY == 'Windows' ? 'copy ' : 'cp ';
     }
 
     /**
@@ -129,10 +130,10 @@ trait ProcessHelper
      */
     protected function findComposer()
     {
-        $composerPath = getcwd() . '/composer.phar';
+        $composerPath = getcwd().'/composer.phar';
 
         if (file_exists($composerPath)) {
-            return '"' . PHP_BINARY . '" ' . $composerPath;
+            return '"'.PHP_BINARY.'" '.$composerPath;
         }
 
         return 'composer';
@@ -144,16 +145,17 @@ trait ProcessHelper
      */
     public function getProjectComposerFile($projectPath)
     {
-        $composer = file_get_contents($projectPath . '/composer.json');
+        $composer = file_get_contents($projectPath.'/composer.json');
+
         return json_decode($composer, true);
     }
 
     /**
-     * @param string $binFileNameWithParams
+     * @param  string  $binFileNameWithParams
      * @return string
      */
     public function vendorBin($binFileNameWithParams)
     {
-        return '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $binFileNameWithParams;
+        return '.'.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'bin'.DIRECTORY_SEPARATOR.$binFileNameWithParams;
     }
 }

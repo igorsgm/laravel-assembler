@@ -48,7 +48,7 @@ $app->singleton(
 
 if (Phar::running()) {
     $builds = dirname(Phar::running(false));
-    $app->useStoragePath($builds . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'storage');
+    $app->useStoragePath($builds.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'storage');
 }
 
 /*
