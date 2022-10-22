@@ -15,6 +15,11 @@ trait ProcessHelper
     /**
      * @var string
      */
+    public $projectBaseName;
+
+    /**
+     * @var string
+     */
     public $projectPath;
 
     /**
@@ -23,6 +28,7 @@ trait ProcessHelper
     public function setDirectoryAndPath($directoryName)
     {
         $this->directory = $directoryName;
+        $this->projectBaseName = basename($directoryName);
         $this->projectPath = $directoryName !== '.' ? getcwd() . '/' . $directoryName : '.';
     }
 
@@ -140,5 +146,14 @@ trait ProcessHelper
     {
         $composer = file_get_contents($projectPath . '/composer.json');
         return json_decode($composer, true);
+    }
+
+    /**
+     * @param string $binFileNameWithParams
+     * @return string
+     */
+    public function vendorBin($binFileNameWithParams)
+    {
+        return '.' . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $binFileNameWithParams;
     }
 }

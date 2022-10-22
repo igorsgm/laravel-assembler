@@ -12,14 +12,15 @@
     ],
     "require": {
         "php": "^7.3|^8.0",
-        "laminas/laminas-text": "^2.8",
-        "laravel/installer": "^4.1",
+        "laminas/laminas-text": "^2.9",
+        "laravel/installer": "^4.2",
         "ext-json": "*"
     },
     "require-dev": {
-        "mockery/mockery": "^1.4.2",
-        "pestphp/pest": "^1.0",
-        "laravel-zero/framework": "^8.4"
+        "laravel-zero/framework": "^9.2",
+        "laravel/pint": "^1.2",
+        "mockery/mockery": "^1.4.4",
+        "pestphp/pest": "^1.21.3"
     },
     "autoload": {
         "psr-4": {
@@ -34,7 +35,10 @@
     "config": {
         "preferred-install": "dist",
         "sort-packages": true,
-        "optimize-autoloader": true
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

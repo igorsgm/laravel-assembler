@@ -108,7 +108,7 @@ trait TasksHandler
             return $this->execOnProject([
                 'git add .',
                 'git commit -m "Initial commit" --no-verify --quiet',
-                'gh repo create ' . $repoName . ' --private -y',
+                'gh repo create ' . $repoName . ' --private --source=. --remote=origin',
                 'git push -u origin master --quiet'
             ], true)->isSuccessful();
         });
@@ -151,6 +151,17 @@ trait TasksHandler
     }
 
     /**
+     * @return mixed
+     */
+    public function taskLaravelPint()
+    {
+        return $this->task(' ➤  🍺 <fg=cyan>Executing Pint</>', function () {
+            $command = $this->vendorBin('pint');
+            return $this->execOnProject($command, true)->isSuccessful();
+        });
+    }
+
+    /**
      * @param string $message
      * @return mixed
      */
@@ -172,7 +183,7 @@ trait TasksHandler
      */
     public function taskValetInstallSSL($directory)
     {
-        return $this->task(' ➤  ⏳ <fg=cyan>Applying local SSL to "' . $directory . '"</>',
+        return $this->task(' ➤  ⏳  <fg=cyan>Applying local SSL to "' . $directory . '"</>',
             function () use ($directory) {
                 $this->newLine();
                 $this->line('<fg=#a9a9a9>Your sudo password may be requested at this step.</>');
@@ -204,7 +215,7 @@ trait TasksHandler
             'Darwin' => 'open -a "PhpStorm.app"',
         ];
 
-        return $this->task(' ➤  🖥  <fg=cyan>Loading project on PhpStorm</>', function () use ($phpStormsByOS) {
+        return $this->task(' ➤  🖥 <fg=cyan>Loading project on PhpStorm</>', function () use ($phpStormsByOS) {
             return $this->execOnProject($phpStormsByOS[PHP_OS_FAMILY] . ' .', true)->isSuccessful();
         });
     }
