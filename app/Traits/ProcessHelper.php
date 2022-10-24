@@ -75,6 +75,22 @@ trait ProcessHelper
     }
 
     /**
+     * @param  array  $commands
+     * @param  callable  $callback
+     * @return array
+     */
+    private function transformCommands($commands, $callback)
+    {
+        return array_map(function ($value) use ($callback) {
+            if (substr($value, 0, 5) === 'chmod') {
+                return $value;
+            }
+
+            return $callback($value);
+        }, $commands);
+    }
+
+    /**
      * Run the given commands.
      *
      * @param  array|string  $commands
@@ -85,33 +101,21 @@ trait ProcessHelper
     public function exec($commands, $cwd, $ignoreOptions, $silent)
     {
         if (! $ignoreOptions && ! $this->getOutput()->isDecorated()) {
-            $commands = array_map(function ($value) {
-                if (substr($value, 0, 5) === 'chmod') {
-                    return $value;
-                }
-
+            $commands = $this->transformCommands($commands, function ($value) {
                 return $value.' --no-ansi';
-            }, $commands);
+            });
         }
 
         if (! $ignoreOptions && $this->input->getOption('quiet')) {
-            $commands = array_map(function ($value) {
-                if (substr($value, 0, 5) === 'chmod') {
-                    return $value;
-                }
-
+            $commands = $this->transformCommands($commands, function ($value) {
                 return $value.' --quiet';
-            }, $commands);
+            });
         }
 
         if ($silent) {
-            $commands = array_map(function ($value) {
-                if (substr($value, 0, 5) === 'chmod') {
-                    return $value;
-                }
-
+            $commands = $this->transformCommands($commands, function ($value) {
                 return $this->buildNoOutputCommand($value);
-            }, $commands);
+            });
         }
 
         $process = Process::fromShellCommandline(implode(' && ', $commands), $cwd, null, null, null);
@@ -180,5 +184,16 @@ trait ProcessHelper
     public function vendorBin($binFileNameWithParams)
     {
         return '.'.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'bin'.DIRECTORY_SEPARATOR.$binFileNameWithParams;
+    }
+
+    /**
+     * Verifies if a specific composer package is to be installed or not
+     *
+     * @param  string  $packageName
+     * @return bool
+     */
+    public function isToInstallPackage(string $packageName)
+    {
+        return in_array($this->additionalPackages[$packageName]['package'], $this->devPackagesToInstall);
     }
 }

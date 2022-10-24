@@ -162,6 +162,7 @@ trait TasksHandler
     public function taskPushChangesToGitHub()
     {
         return $this->task(' ➤  ☁️  <fg=cyan>Committing last changes</>', function () {
+            $this->newLine();
             $branch = $this->baseLaravelInstaller->defaultBranch();
 
             return $this->execOnProject([

@@ -133,7 +133,7 @@ class NewExtendedCommand extends Command
 
         $question = $this->buildQuestionText('Initialize git?');
         if ($this->gitInitialize = $this->confirm($question, true)) {
-            if (in_array($this->additionalPackages['phpcs']['package'], $this->devPackagesToInstall)) {
+            if ($this->isToInstallPackage('phpcs')) {
                 $question = $this->buildQuestionText('Create <fg=green>pre-commit-hook</>?',
                     'To validate PHPCS before committing a code.');
                 $this->gitCreatePreCommitHook = $this->confirm($question, true);
@@ -217,7 +217,7 @@ class NewExtendedCommand extends Command
 
         $this->newComposerFile['scripts']['pint'] = $this->vendorBin('pint');
 
-        if (in_array($this->additionalPackages['phpcs']['package'], $this->devPackagesToInstall)) {
+        if ($this->isToInstallPackage('phpcs')) {
             $this->newComposerFile['scripts']['phpcs'] = $this->vendorBin('phpcs --standard=phpcs.xml');
             $this->newComposerFile['scripts']['phpcbf'] = $this->vendorBin('phpcbf --standard=phpcs.xml');
             $optimizeScripts[] = '@phpcbf';
@@ -227,7 +227,7 @@ class NewExtendedCommand extends Command
             $optimizeScripts[] = '@pint';
         }
 
-        if (in_array($this->additionalPackages['ide-helper']['package'], $this->devPackagesToInstall)) {
+        if ($this->isToInstallPackage('ide-helper')) {
             array_unshift($optimizeScripts,
                 '@php artisan optimize:clear --ansi --no-interaction',
                 '@php artisan ide-helper:eloquent',
