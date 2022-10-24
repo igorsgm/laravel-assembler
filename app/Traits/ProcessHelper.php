@@ -162,7 +162,7 @@ trait ProcessHelper
      */
     public function getProjectComposerFile($projectPath)
     {
-        $composer = file_get_contents($projectPath.'/composer.json');
+        $composer = file_get_contents($projectPath. DIRECTORY_SEPARATOR . 'composer.json');
 
         return json_decode($composer, true);
     }
