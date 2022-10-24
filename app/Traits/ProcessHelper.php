@@ -139,21 +139,11 @@ trait ProcessHelper
      * Commit any changes in the new laravel project.
      *
      * @param  string  $message
-     * @return bool|Process
+     * @return void
      */
     public function commitChanges(string $message)
     {
-        $commands = [
-            'git add .',
-            "git commit -m \"$message\" --no-verify --quiet",
-        ];
-
-        if ($this->repositoryCreated) {
-            $branch = $this->baseLaravelInstaller->defaultBranch();
-            array_unshift($commands, "git checkout {$branch} --quiet");
-        }
-
-        return $this->execOnProject($commands, true)->isSuccessful();
+        $this->baseLaravelInstaller->commitChanges($message, $this->projectPath, $this->input, $this->getOutput());
     }
 
     /**

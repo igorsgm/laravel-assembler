@@ -28,6 +28,21 @@ class BaseNewCommand extends NewCommand
 
     /**
      * OVERRIDE
+     * Commit any changes in the current working directory.
+     *
+     * @param  string  $message
+     * @param  string  $directory
+     * @param  \Symfony\Component\Console\Input\InputInterface  $input
+     * @param  \Symfony\Component\Console\Output\OutputInterface  $output
+     * @return void
+     */
+    public function commitChanges(string $message, string $directory, InputInterface $input, OutputInterface $output)
+    {
+        parent::commitChanges($message, $directory, $input, $output);
+    }
+
+    /**
+     * OVERRIDE
      * Create a GitHub repository and push the git log to it.
      *
      * @param  string  $name
