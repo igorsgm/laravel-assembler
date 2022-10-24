@@ -15,7 +15,7 @@ trait TasksHandler
         return $this->task(' ➤  📚 <fg=cyan>Installing additional dev dependencies</>', function () use ($packages) {
             $packages = implode(' ', $packages);
 
-            return $this->execOnProject($this->findComposer().' require --dev --quiet '.$packages)
+            return $this->execOnProject($this->baseLaravelInstaller->findComposer().' require --dev --quiet '.$packages)
                 ->isSuccessful();
         });
     }
@@ -76,16 +76,6 @@ trait TasksHandler
     }
 
     /**
-     * @return mixed
-     */
-    public function taskInitializeGit()
-    {
-        return $this->task(' ➤  ☁️  <fg=cyan>Initializing git</>', function () {
-            return $this->execOnProject('git init --quiet')->isSuccessful();
-        });
-    }
-
-    /**
      * @param  array  $installHooksScript
      * @return mixed
      */
@@ -103,19 +93,17 @@ trait TasksHandler
     }
 
     /**
-     * @return mixed
+     * Create a Git repository and commit the base Laravel skeleton.
+     *
+     * @param $repoName
+     * @return bool
      */
     public function taskCreatePrivateGitHubRepository($repoName)
     {
         return $this->task(' ➤  ☁️  <fg=cyan>Creating private repository</>', function () use ($repoName) {
             $this->newLine();
-
-            return $this->execOnProject([
-                'git add .',
-                'git commit -m "Initial commit" --no-verify --quiet',
-                'gh repo create '.$repoName.' --private --source=. --remote=origin',
-                'git push -u origin master --quiet',
-            ], true)->isSuccessful();
+            $this->baseLaravelInstaller->pushToGitHub($repoName, $this->projectPath, $this->input, $this->getOutput());
+            return true;
         });
     }
 
@@ -134,7 +122,7 @@ trait TasksHandler
      */
     public function taskUpdateReadmeFile($projectName, $projectPath)
     {
-        return $this->task(' ➤  📃  <fg=cyan>Updating README.md</>', function () use ($projectName, $projectPath) {
+        return $this->task(' ➤  📃 <fg=cyan>Updating README.md</>', function () use ($projectName, $projectPath) {
             $readMe = str_replace('projectName', $projectName, Storage::get('README.md'));
 
             return file_put_contents($projectPath.'/README.md', $readMe);
@@ -168,17 +156,15 @@ trait TasksHandler
     }
 
     /**
-     * @param  string  $message
      * @return mixed
      */
-    public function taskCommitChangesToGitHubMaster($message)
+    public function taskPushChangesToGitHub()
     {
-        return $this->task(' ➤  ☁️  <fg=cyan>Committing last changes</>', function () use ($message) {
+        return $this->task(' ➤  ☁️  <fg=cyan>Committing last changes</>', function () {
+            $branch = $this->baseLaravelInstaller->defaultBranch();
+
             return $this->execOnProject([
-                'git checkout master --quiet',
-                'git add .',
-                'git commit -m "'.$message.'" --no-verify --quiet',
-                'git push origin master --quiet',
+                "git push -u origin {$branch} --quiet",
             ], true)->isSuccessful();
         });
     }

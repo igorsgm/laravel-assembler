@@ -41,7 +41,7 @@ trait ProcessHelper
      */
     public function buildQuestionText($question, $comment = '')
     {
-        $question = "<fg=white> $question</>";
+        $question = "❓ <fg=white> $question</>";
 
         if (! empty($comment)) {
             $question .= PHP_EOL.' <fg=#a9a9a9>'.$comment.'</>';
@@ -132,6 +132,27 @@ trait ProcessHelper
     }
 
     /**
+     * Commit any changes in the new laravel project.
+     *
+     * @param  string  $message
+     * @return bool|Process
+     */
+    public function commitChanges(string $message)
+    {
+        $commands = [
+            'git add .',
+            "git commit -m \"$message\" --no-verify --quiet",
+        ];
+
+        if ($this->repositoryCreated) {
+            $branch = $this->baseLaravelInstaller->defaultBranch();
+            array_unshift($commands, "git checkout {$branch} --quiet");
+        }
+
+        return $this->execOnProject($commands, true)->isSuccessful();
+    }
+
+    /**
      * The copy command based on OS type
      *
      * @return string
@@ -139,22 +160,6 @@ trait ProcessHelper
     public function copy()
     {
         return PHP_OS_FAMILY == 'Windows' ? 'copy ' : 'cp ';
-    }
-
-    /**
-     * Get the composer command for the environment.
-     *
-     * @return string
-     */
-    protected function findComposer()
-    {
-        $composerPath = getcwd().'/composer.phar';
-
-        if (file_exists($composerPath)) {
-            return '"'.PHP_BINARY.'" '.$composerPath;
-        }
-
-        return 'composer';
     }
 
     /**
