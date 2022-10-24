@@ -103,6 +103,7 @@ trait TasksHandler
         return $this->task(' ➤  ☁️  <fg=cyan>Creating private repository</>', function () use ($repoName) {
             $this->newLine();
             $this->baseLaravelInstaller->pushToGitHub($repoName, $this->projectPath, $this->input, $this->getOutput());
+
             return true;
         });
     }

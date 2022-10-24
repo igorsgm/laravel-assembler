@@ -162,7 +162,7 @@ class NewExtendedCommand extends Command
             $this->taskPushChangesToGitHub();
 
             if ($this->gitStartGitFlow) {
-               $this->taskStartGitFlow();
+                $this->taskStartGitFlow();
             }
 
             $this->openProjectTasks();
