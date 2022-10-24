@@ -163,16 +163,14 @@ class NewExtendedCommand extends Command
                     return ["--{$key}" => $value];
                 })->toArray();
 
-            $this->call(NewCommand::class, array_merge(
-                ['name' => $this->directory],
+            $this->callSilently(NewCommand::class, array_merge([
+                'name' => $this->directory,
+                '--quiet' => true,
+            ],
                 $options
             ));
 
-            if ($projectCreated = file_exists($this->projectPath)) {
-                $this->warn("Actually... Let's set up a few things more 🛠");
-            }
-
-            return $projectCreated;
+            return file_exists($this->projectPath);
         });
     }
 

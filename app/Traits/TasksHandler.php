@@ -125,9 +125,7 @@ trait TasksHandler
     public function taskStartGitFlow()
     {
         return $this->task(' ➤  ☁️  <fg=cyan>Starting git flow</>', function () {
-            $command = 'git flow init -d > '.(PHP_OS_FAMILY == 'Windows' ? 'NUL' : '/dev/null 2>&1');
-
-            return $this->execOnProject($command, true)->isSuccessful();
+            return $this->execOnProject('git flow init -d', true, true)->isSuccessful();
         });
     }
 
@@ -165,7 +163,7 @@ trait TasksHandler
         return $this->task(' ➤  🍺 <fg=cyan>Executing Pint</>', function () {
             $command = $this->vendorBin('pint');
 
-            return $this->execOnProject($command, true)->isSuccessful();
+            return $this->execOnProject($command, true, true)->isSuccessful();
         });
     }
 

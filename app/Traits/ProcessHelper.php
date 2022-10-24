@@ -41,7 +41,7 @@ trait ProcessHelper
      */
     public function buildQuestionText($question, $comment = '')
     {
-        $question = "❓<fg=white> $question</>";
+        $question = "<fg=white> $question</>";
 
         if (! empty($comment)) {
             $question .= PHP_EOL.' <fg=#a9a9a9>'.$comment.'</>';
@@ -51,15 +51,27 @@ trait ProcessHelper
     }
 
     /**
+     * Builds the string for a command without console output
+     *
+     * @param  string  $command
+     * @return string
+     */
+    public function buildNoOutputCommand($command = '')
+    {
+        return trim($command).' > '.(PHP_OS_FAMILY == 'Windows' ? 'NUL' : '/dev/null 2>&1');
+    }
+
+    /**
      * Run the given commands inside the project's directory
      *
      * @param  string|array  $commands
      * @param  false  $ignoreOptions
+     * @param  bool  $silent
      * @return Process
      */
-    public function execOnProject($commands, $ignoreOptions = false)
+    public function execOnProject($commands, $ignoreOptions = false, $silent = false)
     {
-        return $this->exec($commands, $this->projectPath, $ignoreOptions);
+        return $this->exec((array) $commands, $this->projectPath, $ignoreOptions, $silent);
     }
 
     /**
@@ -70,13 +82,9 @@ trait ProcessHelper
      * @param  bool  $ignoreOptions
      * @return Process
      */
-    public function exec($commands, $cwd = null, $ignoreOptions = false)
+    public function exec($commands, $cwd, $ignoreOptions, $silent)
     {
-        if (! is_array($commands)) {
-            $commands = [$commands];
-        }
-
-        if (! $ignoreOptions && $this->input->getOption('no-ansi')) {
+        if (! $ignoreOptions && ! $this->getOutput()->isDecorated()) {
             $commands = array_map(function ($value) {
                 if (substr($value, 0, 5) === 'chmod') {
                     return $value;
@@ -93,6 +101,16 @@ trait ProcessHelper
                 }
 
                 return $value.' --quiet';
+            }, $commands);
+        }
+
+        if ($silent) {
+            $commands = array_map(function ($value) {
+                if (substr($value, 0, 5) === 'chmod') {
+                    return $value;
+                }
+
+                return $this->buildNoOutputCommand($value);
             }, $commands);
         }
 
