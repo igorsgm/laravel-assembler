@@ -190,7 +190,7 @@ class NewExtendedCommand extends Command
                 '--branch' => 'master',
                 '--git' => $this->gitInitialize ?? false,
             ],
-                Arr::except($options, ['--git', '--branch', '--github', '--organization'])
+                Arr::except($options, ['--git', '--github'])
             ));
 
             if ($projectCreated = file_exists($this->projectPath)) {

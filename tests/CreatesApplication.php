@@ -17,7 +17,12 @@ trait CreatesApplication
     /**
      * @var string
      */
-    public $scaffoldDirectoryName;
+    public $scaffoldDirectoryName = 'tests-output/my-app';
+
+    /**
+     * @var string
+     */
+    public $scaffoldProjectBaseName;
 
     /**
      * Creates the application.
@@ -30,7 +35,7 @@ trait CreatesApplication
 
         $app->make(Kernel::class)->bootstrap();
 
-        $this->scaffoldDirectoryName = 'tests-output/my-app';
+        $this->scaffoldProjectBaseName = basename($this->scaffoldDirectoryName);
         $this->scaffoldDirectory = __DIR__.'/../'.$this->scaffoldDirectoryName;
 
         return $app;
