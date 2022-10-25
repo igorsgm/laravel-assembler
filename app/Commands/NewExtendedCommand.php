@@ -97,7 +97,7 @@ class NewExtendedCommand extends Command
     /**
      * @var array
      */
-    private $additionalPackages;
+    private $additionalComposerPackages;
 
     /**
      * Execute the console command.
@@ -117,33 +117,24 @@ class NewExtendedCommand extends Command
         ");
 
         $this->baseLaravelInstaller = resolve(BaseNewCommand::class);
-        $this->additionalPackages = config('app.additional-packages.require-dev');
+        $this->additionalComposerPackages = config('app.additional-composer-packages.require-dev');
         $this->setDirectoryAndPath($this->argument('name'));
 
         $this->newLine();
 
-        foreach ($this->additionalPackages as $devDependency) {
-            $package = $devDependency['package'];
-            $question = $this->buildQuestionText('Include '.($devDependency['title'] ?? $package).'?');
-            $defaultAnswer = isset($devDependency['default-answer']) ? $devDependency['default-answer'] : true;
-            if ($this->confirm($question, $defaultAnswer)) {
-                $this->devPackagesToInstall[] = $package;
-            }
-        }
+        $this->additionalComposerPackagesQuestions()
+            ->additionalFrontEndQuestions();
 
         $question = $this->buildQuestionText('Initialize git?');
         if ($this->gitInitialize = $this->confirm($question, true)) {
             if ($this->isToInstallPackage('phpcs')) {
-                $question = $this->buildQuestionText('Create <fg=green>pre-commit-hook</>?',
-                    'To validate PHPCS before committing a code.');
+                $question = $this->buildQuestionText('Create <fg=green>pre-commit-hook</>?', 'To validate PHPCS before committing a code.');
                 $this->gitCreatePreCommitHook = $this->confirm($question, true);
             }
 
-            $question = $this->buildQuestionText('Create GitHub repository for <fg=green>'.$this->projectBaseName.'</>?',
-                'GitHub CLI required. Check: https://cli.github.com');
+            $question = $this->buildQuestionText('Create GitHub repository for <fg=green>'.$this->projectBaseName.'</>?', 'GitHub CLI required. Check: https://cli.github.com');
             if ($this->gitCreateRepo = $this->confirm($question, true)) {
-                $question = $this->buildQuestionText('Start git flow for <fg=green>'.$this->projectBaseName.'</>?',
-                    'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
+                $question = $this->buildQuestionText('Start git flow for <fg=green>'.$this->projectBaseName.'</>?', 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
                 $this->gitStartGitFlow = $this->confirm($question, true);
             }
         }
@@ -157,7 +148,8 @@ class NewExtendedCommand extends Command
 
         if ($this->installLaravelTask()) {
             $this->gitHubTasks();
-            $this->devDependenciesTasks();
+            $this->composerDevDependenciesTasks();
+            $this->npmDependenciesTasks();
             $this->composerFileTasks();
             $this->taskPushChangesToGitHub();
 
@@ -170,6 +162,40 @@ class NewExtendedCommand extends Command
             $this->getOutput()->writeln('  <bg=blue;fg=white> INFO </> <fg=cyan>Application 100% ready! Build something amazing....</>'.PHP_EOL);
             $this->warn(' ✨  Mischief Managed.');
         }
+    }
+
+    private function additionalComposerPackagesQuestions()
+    {
+        $this->getOutput()->writeln('  <bg=blue;fg=white> ADDITIONAL COMPOSER PACKAGES </>'.PHP_EOL);
+        foreach ($this->additionalComposerPackages as $devDependency) {
+            $package = $devDependency['package'];
+            $question = $this->buildQuestionText('Include '.($devDependency['title'] ?? $package).'?');
+            $defaultAnswer = isset($devDependency['default-answer']) ? $devDependency['default-answer'] : true;
+            if ($this->confirm($question, $defaultAnswer)) {
+                $this->devPackagesToInstall[] = $package;
+            }
+        }
+
+        return $this;
+    }
+
+    private function additionalFrontEndQuestions()
+    {
+        $this->getOutput()->writeln('  <bg=blue;fg=white> ADDITIONAL FRONT-END SETUP </>'.PHP_EOL);
+
+        $question = $this->buildQuestionText('Set up <fg=green>Tailwind CSS</>?');
+        $this->installTailwindCSS = $this->confirm($question, true);
+
+        $question = $this->buildQuestionText('Set up <fg=green>ESLint</> and <fg=green>Prettier</>?');
+        $this->installESLintAndPrettier = $this->confirm($question, true);
+
+        $question = $this->buildQuestionText('Install <fg=green>Blade Formatter</>?', 'https://npmjs.com/package/blade-formatter');
+        $this->installBladeFormatter = $this->confirm($question, true);
+
+        $question = $this->buildQuestionText('Install <fg=green>Alpine.js</>?', 'https://alpinejs.dev/');
+        $this->installBladeFormatter = $this->confirm($question, true);
+
+        return $this;
     }
 
     /** Execute the Laravel Installation script from laravel/installer
@@ -204,12 +230,12 @@ class NewExtendedCommand extends Command
     /**
      * All the tasks related to the dev dependencies
      */
-    public function devDependenciesTasks()
+    public function composerDevDependenciesTasks()
     {
         $optimizeScripts = [];
 
         if (! empty($this->devPackagesToInstall)) {
-            $this->taskInstallDevPackages($this->devPackagesToInstall);
+            $this->taskInstallComposerDevPackages($this->devPackagesToInstall);
         }
 
         $this->composerFile = $this->getProjectComposerFile($this->projectPath);
@@ -237,7 +263,7 @@ class NewExtendedCommand extends Command
             );
 
             $this->taskGenerateIdeHelperFiles();
-            $this->taskPublishVendorConfigFiles([$this->additionalPackages['ide-helper']['provider']]);
+            $this->taskPublishVendorConfigFiles([$this->additionalComposerPackages['ide-helper']['provider']]);
         }
 
         if (! empty($optimizeScripts)) {
@@ -252,6 +278,16 @@ class NewExtendedCommand extends Command
         $this->taskLaravelPint();
 
         $this->commitChanges('Composer Dev Packages installed + Pint executed');
+    }
+
+    /**
+     * All the tasks related to the dev dependencies
+     */
+    public function npmDependenciesTasks()
+    {
+        if ($this->installTailwindCSS && $this->taskInstallTailwindCSS()) {
+            $this->commitChanges('Tailwind CSS installed');
+        }
     }
 
     /**

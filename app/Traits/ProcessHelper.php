@@ -184,6 +184,6 @@ trait ProcessHelper
      */
     public function isToInstallPackage(string $packageName)
     {
-        return in_array($this->additionalPackages[$packageName]['package'], $this->devPackagesToInstall);
+        return in_array($this->additionalComposerPackages[$packageName]['package'], $this->devPackagesToInstall);
     }
 }

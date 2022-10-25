@@ -10,13 +10,37 @@ trait TasksHandler
      * @param  array  $packages
      * @return mixed
      */
-    public function taskInstallDevPackages(array $packages)
+    public function taskInstallComposerDevPackages(array $packages)
     {
-        return $this->task(' ➤  📚 <fg=cyan>Installing additional dev dependencies</>', function () use ($packages) {
+        return $this->task(' ➤  📚 <fg=cyan>Installing additional Composer dependencies</>', function () use ($packages) {
             $packages = implode(' ', $packages);
 
             return $this->execOnProject($this->baseLaravelInstaller->findComposer().' require --dev --quiet '.$packages)
                 ->isSuccessful();
+        });
+    }
+
+    public function taskInstallTailwindCss()
+    {
+        return $this->task(' ➤  📚 <fg=cyan>Installing Tailwind CSS</>', function () {
+            $installation = $this->execOnProject([
+                'npm install -D tailwindcss postcss autoprefixer',
+                'npx tailwindcss init -p',
+            ], true, true);
+
+            if ($installation->isSuccessful()) {
+                file_put_contents($this->projectPath.'/tailwind.config.js', Storage::get('tailwind.config.js'));
+
+                $tailwindDirectives = [
+                    '@tailwind base;',
+                    '@tailwind components;',
+                    '@tailwind utilities;',
+                ];
+
+                return file_put_contents($this->projectPath.'/resources/css/app.css', implode("\n", $tailwindDirectives)."\n", FILE_APPEND);
+            }
+
+            return false;
         });
     }
 

@@ -68,7 +68,7 @@ return [
     |
     */
 
-    'additional-packages' => [
+    'additional-composer-packages' => [
 
         'require-dev' => [
             'ide-helper' => [
