@@ -61,7 +61,12 @@ class NewExtendedCommand extends Command
     protected $devPackagesToInstall = [];
 
     /**
-     * Determines if the github repository to the project was created
+     * @var array
+     */
+    private $additionalComposerPackages;
+
+    /**
+     * Determines if the GitHub repository to the project was created
      *
      * @var array
      */
@@ -70,42 +75,37 @@ class NewExtendedCommand extends Command
     /**
      * @var bool
      */
-    private $gitInitialize = false;
+    private $inputGitInitialize = false;
 
     /**
      * @var bool
      */
-    private $gitCreatePreCommitHook = false;
+    private $inputGitCreatePreCommitHook = false;
 
     /**
      * @var bool
      */
-    private $gitCreateRepo = false;
+    private $inputGitCreateRepo = false;
 
     /**
      * @var bool
      */
-    private $gitStartGitFlow = false;
+    private $inputGitStartGitFlow = false;
 
     /**
      * @var bool
      */
-    private $installComposerScripts = false;
-
-    /**
-     * @var array
-     */
-    private $additionalComposerPackages;
+    private $inputInstallComposerScripts = false;
 
     /**
      * @var bool
      */
-    private $inputSecureValet;
+    private $inputSecureValet = false;
 
     /**
      * @var bool
      */
-    private $inputOpenProjectOnPhpStorm;
+    private $inputOpenProjectOnPhpStorm = false;
 
     /**
      * Execute the console command.
@@ -148,7 +148,7 @@ class NewExtendedCommand extends Command
                 $this->taskPushChangesToGitHub();
             }
 
-            if ($this->gitStartGitFlow) {
+            if ($this->inputGitStartGitFlow) {
                 $this->taskStartGitFlow();
             }
 
@@ -165,15 +165,14 @@ class NewExtendedCommand extends Command
         $this->getOutput()->writeln('  <bg=blue;fg=white> ADDITIONAL COMPOSER PACKAGES </>'.PHP_EOL);
         foreach ($this->additionalComposerPackages as $devDependency) {
             $package = $devDependency['package'];
-            $question = $this->buildQuestionText('Include '.($devDependency['title'] ?? $package).'?');
             $defaultAnswer = isset($devDependency['default-answer']) ? $devDependency['default-answer'] : true;
-            if ($this->confirm($question, $defaultAnswer)) {
+
+            if ($this->confirmQuestion('Include '.($devDependency['title'] ?? $package).'?', '', $defaultAnswer)) {
                 $this->devPackagesToInstall[] = $package;
             }
         }
 
-        $question = $this->buildQuestionText('Install custom scripts on composer.json?', 'To be easier to run Pint, PHPCS or generate ide-helper files.');
-        $this->installComposerScripts = $this->confirm($question, true);
+        $this->inputInstallComposerScripts = $this->confirmQuestion('Install custom scripts on composer.json?', 'To be easier to run Pint, PHPCS or generate ide-helper files.', true);
 
         return $this;
     }
@@ -182,17 +181,10 @@ class NewExtendedCommand extends Command
     {
         $this->getOutput()->writeln('  <bg=blue;fg=white> ADDITIONAL FRONT-END SETUP </>'.PHP_EOL);
 
-        $question = $this->buildQuestionText('Install <fg=green>Tailwind CSS</>?');
-        $this->inputInstallTailwindCSS = $this->confirm($question, true);
-
-        $question = $this->buildQuestionText('Install <fg=green>ESLint</> and <fg=green>Prettier</>?');
-        $this->inputInstallESLintAndPrettier = $this->confirm($question, true);
-
-        $question = $this->buildQuestionText('Install <fg=green>Blade Formatter</>?', 'https://npmjs.com/package/blade-formatter');
-        $this->inputInstallBladeFormatter = $this->confirm($question, true);
-
-        $question = $this->buildQuestionText('Install <fg=green>Alpine.js</>?', 'https://alpinejs.dev');
-        $this->inputInstallAlpineJs = $this->confirm($question, true);
+        $this->inputInstallTailwindCSS = $this->confirmQuestion('Install <fg=green>Tailwind CSS</>?', '', true);
+        $this->inputInstallESLintAndPrettier = $this->confirmQuestion('Install <fg=green>ESLint</> and <fg=green>Prettier</>?', '', true);
+        $this->inputInstallBladeFormatter = $this->confirmQuestion('Install <fg=green>Blade Formatter</>?', 'https://npmjs.com/package/blade-formatter', true);
+        $this->inputInstallAlpineJs = $this->confirmQuestion('Install <fg=green>Alpine.js</>?', 'https://alpinejs.dev', false);
 
         return $this;
     }
@@ -201,18 +193,15 @@ class NewExtendedCommand extends Command
     {
         $this->getOutput()->writeln('  <bg=blue;fg=white> GIT SETUP </>'.PHP_EOL);
 
-        $question = $this->buildQuestionText('Initialize git?');
-        if ($this->gitInitialize = $this->confirm($question, true)) {
+        if ($this->inputGitInitialize = $this->confirmQuestion('Initialize git?', '', true)) {
             if ($this->isToInstallPackage('phpcs')) {
-                $question = $this->buildQuestionText('Create <fg=green>pre-commit-hook</>?',
-                    'To validate PHPCS before committing a code.');
-                $this->gitCreatePreCommitHook = $this->confirm($question, true);
+                $this->inputGitCreatePreCommitHook = $this->confirmQuestion('Create <fg=green>pre-commit-hook</>?', 'To validate PHPCS before committing a code.', true);
             }
 
-            $question = $this->buildQuestionText('Create GitHub repository for <fg=green>'.$this->projectBaseName.'</>?', 'GitHub CLI required. Check: https://cli.github.com');
-            if ($this->gitCreateRepo = $this->confirm($question, true)) {
-                $question = $this->buildQuestionText('Start git flow for <fg=green>'.$this->projectBaseName.'</>?', 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
-                $this->gitStartGitFlow = $this->confirm($question, true);
+            $this->inputGitCreateRepo = $this->confirmQuestion('Create GitHub repository for <fg=green>'.$this->projectBaseName.'</>?', 'GitHub CLI required. Check: https://cli.github.com', true);
+
+            if ($this->inputGitCreateRepo) {
+                $this->inputGitStartGitFlow = $this->confirmQuestion('Start git flow for <fg=green>'.$this->projectBaseName.'</>?', 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh', true);
             }
         }
 
@@ -223,11 +212,8 @@ class NewExtendedCommand extends Command
     {
         $this->getOutput()->writeln('  <bg=blue;fg=white> LOCAL ENVIRONMENT SETUP </>'.PHP_EOL);
 
-        $question = $this->buildQuestionText('Apply local SSL to <fg=green>'.$this->projectBaseName.'</>?', 'Laravel Valet required. Check https://laravel.com/docs/master/valet');
-        $this->inputSecureValet = $this->confirm($question, true);
-
-        $question = $this->buildQuestionText('Open <fg=green>'.$this->projectBaseName.'</> on PhpStorm?', 'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html');
-        $this->inputOpenProjectOnPhpStorm = $this->confirm($question, true);
+        $this->inputSecureValet = $this->confirmQuestion('Apply local SSL to <fg=green>'.$this->projectBaseName.'</>?', 'Laravel Valet required. Check https://laravel.com/docs/master/valet', true);
+        $this->inputOpenProjectOnPhpStorm = $this->confirmQuestion('Open <fg=green>'.$this->projectBaseName.'</> on PhpStorm?', 'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html');
     }
 
     /**
@@ -327,15 +313,15 @@ class NewExtendedCommand extends Command
     {
         $this->taskUpdateGitIgnore();
 
-        if (! $this->gitInitialize) {
+        if (! $this->inputGitInitialize) {
             return false;
         }
 
-        if ($this->gitCreateRepo) {
+        if ($this->inputGitCreateRepo) {
             $this->repositoryCreated = $this->taskCreatePrivateGitHubRepository($this->projectBaseName);
         }
 
-        if ($this->gitCreatePreCommitHook) {
+        if ($this->inputGitCreatePreCommitHook) {
             $preCommitHookPath = '.git'.DIRECTORY_SEPARATOR.'hooks'.DIRECTORY_SEPARATOR.'pre-commit';
             $installHooksScript = [
                 $this->copy().'pre-commit-hook.sh '.$preCommitHookPath,
@@ -361,7 +347,7 @@ class NewExtendedCommand extends Command
      */
     public function runComposerFileTasks()
     {
-        if (! $this->installComposerScripts) {
+        if (! $this->inputInstallComposerScripts) {
             return false;
         }
 

@@ -24,7 +24,7 @@ trait TasksHandler
             $this->call(NewCommand::class, array_merge([
                 'name' => $this->directory,
                 '--branch' => 'master',
-                '--git' => $this->gitInitialize ?? false,
+                '--git' => $this->inputGitInitialize ?? false,
             ],
                 Arr::except($options, ['--git', '--github'])
             ));
@@ -314,7 +314,7 @@ trait TasksHandler
                 $this->newLine();
                 $this->line('<fg=#a9a9a9>Your sudo password may be requested at this step.</>');
 
-                return $this->execOnProject('valet secure '.$directory, true, true)->isSuccessful();
+                return $this->execOnProject('valet secure '.$directory, true)->isSuccessful();
             });
     }
 

@@ -51,6 +51,19 @@ trait ProcessHelper
     }
 
     /**
+     * Confirm a question with the user.
+     *
+     * @param  string  $question
+     * @param  string  $comment
+     * @param  bool  $default
+     * @return bool
+     */
+    public function confirmQuestion(string $question, string $comment = '', bool $default = false)
+    {
+        return $this->confirm($this->buildQuestionText($question, $comment), $default);
+    }
+
+    /**
      * Builds the string for a command without console output
      *
      * @param  string  $command
