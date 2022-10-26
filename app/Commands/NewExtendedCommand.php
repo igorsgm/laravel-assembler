@@ -139,10 +139,10 @@ class NewExtendedCommand extends Command
         $this->newLine();
 
         if ($this->taskInstallLaravel()) {
-            $this->runGitHubTasks();
-            $this->runComposerDevDependenciesTasks();
-            $this->runNpmDependenciesTasks();
-            $this->runComposerFileTasks();
+            $this->runGitHubTasks()
+                ->runComposerDevDependenciesTasks()
+                ->runNpmDependenciesTasks()
+                ->runComposerFileTasks();
 
             if ($this->repositoryCreated) {
                 $this->taskPushChangesToGitHub();
@@ -152,7 +152,7 @@ class NewExtendedCommand extends Command
                 $this->taskStartGitFlow();
             }
 
-            $this->runOpenProjectTasks();
+            $this->runFinalProjectTasks();
 
             $this->newLine();
             $this->getOutput()->writeln('  <bg=blue;fg=white> INFO </> <fg=cyan>Application 100% ready! Build something amazing....</>'.PHP_EOL);
@@ -218,6 +218,8 @@ class NewExtendedCommand extends Command
 
     /**
      * All the tasks related to the dev dependencies
+     *
+     * @return $this
      */
     public function runComposerDevDependenciesTasks()
     {
@@ -267,10 +269,14 @@ class NewExtendedCommand extends Command
         $this->taskLaravelPint();
 
         $this->commitChanges('Composer Dev Packages installed + Pint executed');
+
+        return $this;
     }
 
     /**
      * All the tasks related to the dev dependencies
+     *
+     * @return $this
      */
     public function runNpmDependenciesTasks()
     {
@@ -301,20 +307,26 @@ class NewExtendedCommand extends Command
         if ($this->inputInstallAlpineJs && $this->taskInstallAlpineJs()) {
             $this->commitChanges('Alpine.js installed');
         }
+
+        if ($this->inputSecureValet && $this->taskAddValetSSHSupportToVite()) {
+            $this->commitChanges('Vite supporting Valet SSH');
+        }
+
+        return $this;
     }
 
     /**
      * Tasks related to Git/GitHub. All the questions are made first and then the tasks are executed in sequence.
      * The code looks a bit uglier but the console output looks better doing in this way.
      *
-     * @return bool
+     * @return $this
      */
     public function runGitHubTasks()
     {
         $this->taskUpdateGitIgnore();
 
         if (! $this->inputGitInitialize) {
-            return false;
+            return $this;
         }
 
         if ($this->inputGitCreateRepo) {
@@ -322,70 +334,45 @@ class NewExtendedCommand extends Command
         }
 
         if ($this->inputGitCreatePreCommitHook) {
-            $preCommitHookPath = '.git'.DIRECTORY_SEPARATOR.'hooks'.DIRECTORY_SEPARATOR.'pre-commit';
-            $installHooksScript = [
-                $this->copy().'pre-commit-hook.sh '.$preCommitHookPath,
-                'chmod +x '.$preCommitHookPath,
-                'chmod +x pre-commit-hook.sh',
-            ];
-
-            if ($this->taskCreatePhpCsPreCommitHook($installHooksScript)) {
+            if ($this->taskCreatePhpCsPreCommitHook()) {
                 $this->commitChanges('PHPCS pre-commit-hook created');
             }
-
-            $this->newComposerFile['scripts']['install-hooks'] = $installHooksScript;
-            $this->newComposerFile['scripts']['pre-install-cmd'] = $this->newComposerFile['scripts']['post-install-cmd'] = ['@install-hooks'];
         }
 
-        if ($this->taskUpdateReadmeFile($this->projectBaseName, $this->projectPath)) {
+        if ($this->taskUpdateReadmeFile()) {
             $this->commitChanges('README updated');
         }
+
+        return $this;
     }
 
     /**
      * Tasks related to update the composer.json file of the projects with new scripts.
+     *
+     * @return $this
      */
     public function runComposerFileTasks()
     {
         if (! $this->inputInstallComposerScripts) {
-            return false;
+            return $this;
         }
 
-        $orderedScripts = [
-            'post-autoload-dump',
-            'post-root-package-install',
-            'post-create-project-cmd',
-            'post-update-cmd',
-            'install-hooks',
-            'pre-install-cmd',
-            'post-install-cmd',
-            'phpcs',
-            'phpcbf',
-            'pint',
-            'optimize',
-        ];
-
-        // Making sure that the scripts will come in a nice order
-        $scripts = [];
-        foreach ($orderedScripts as $scriptName) {
-            if (array_key_exists($scriptName, $this->newComposerFile['scripts'])) {
-                $scripts[$scriptName] = $this->newComposerFile['scripts'][$scriptName];
-            }
-        }
-
-        $this->newComposerFile['scripts'] = $scripts;
-
-        if ($this->taskUpdateComposerFile($this->newComposerFile)) {
+        if ($this->taskUpdateComposerFile()) {
             $this->commitChanges('composer.json scripts updated.');
         }
+
+        return $this;
     }
 
     /**
      * Perform Valet and PhpStorm IDE actions
+     *
+     * @return $this
      */
-    public function runOpenProjectTasks()
+    public function runFinalProjectTasks()
     {
         if ($this->inputSecureValet && $this->taskValetInstallSSL($this->projectBaseName)) {
+            $this->taskNpmRunBuild();
             $this->taskValetOpenProjectOnBrowser($this->projectBaseName);
         }
 
@@ -393,5 +380,7 @@ class NewExtendedCommand extends Command
             $this->taskLoadProjectOnPhpStorm();
             $this->newLine();
         }
+
+        return $this;
     }
 }

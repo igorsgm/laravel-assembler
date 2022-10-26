@@ -64,11 +64,21 @@ trait TasksHandler
     /**
      * @return bool
      */
+    public function taskNpmRunBuild()
+    {
+        return $this->task(' ➤  📚 <fg=cyan>Building npm assets</>', function () {
+            return $this->execOnProject('npm run build', true, true)->isSuccessful();
+        });
+    }
+
+    /**
+     * @return bool
+     */
     public function taskInstallTailwindCss()
     {
         return $this->task(' ➤  📚 <fg=cyan>Installing Tailwind CSS</>', function () {
             $installation = $this->execOnProject([
-                'npm install -D tailwindcss postcss autoprefixer',
+                'npm install -D tailwindcss postcss autoprefixer @tailwindcss/aspect-ratio @tailwindcss/forms @tailwindcss/typography',
                 'npx tailwindcss init -p',
             ], true, true);
 
@@ -146,6 +156,22 @@ trait TasksHandler
     }
 
     /**
+     * @return bool
+     */
+    public function taskAddValetSSHSupportToVite()
+    {
+        return $this->task(' ➤  📚 <fg=cyan>Making Vite support Valet SSH</>', function () {
+            $viteEnvKeys = implode("\n", [
+                'VITE_APP_URL="${APP_URL}"',
+            ])."\n";
+
+            return file_put_contents($this->projectPath.DIRECTORY_SEPARATOR.'.env', $viteEnvKeys, FILE_APPEND) &&
+                file_put_contents($this->projectPath.DIRECTORY_SEPARATOR.'.env.example', $viteEnvKeys, FILE_APPEND) &&
+                file_put_contents($this->projectPath.DIRECTORY_SEPARATOR.'vite.config.js', Storage::get('vite.config.js'));
+        });
+    }
+
+    /**
      * @param  string  $projectPath
      * @return mixed
      */
@@ -211,17 +237,26 @@ trait TasksHandler
      * @param  array  $installHooksScript
      * @return mixed
      */
-    public function taskCreatePhpCsPreCommitHook(array $installHooksScript)
+    public function taskCreatePhpCsPreCommitHook()
     {
-        return $this->task(' ➤  ☁️  <fg=cyan>Creating phpcs "pre-commit-hook"</>',
-            function () use ($installHooksScript) {
-                $commands = array_merge(
-                    [$this->copy().Storage::path('pre-commit-hook.sh')." $this->projectPath"],
-                    $installHooksScript
-                );
+        return $this->task(' ➤  ☁️  <fg=cyan>Creating phpcs "pre-commit-hook"</>', function () {
+            $preCommitHookPath = '.git'.DIRECTORY_SEPARATOR.'hooks'.DIRECTORY_SEPARATOR.'pre-commit';
+            $installHooksScript = [
+                $this->copy().'pre-commit-hook.sh '.$preCommitHookPath,
+                'chmod +x '.$preCommitHookPath,
+                'chmod +x pre-commit-hook.sh',
+            ];
 
-                return $this->execOnProject($commands, true)->isSuccessful();
-            });
+            $commands = array_merge(
+                [$this->copy().Storage::path('pre-commit-hook.sh')." $this->projectPath"],
+                $installHooksScript
+            );
+
+            $this->newComposerFile['scripts']['install-hooks'] = $installHooksScript;
+            $this->newComposerFile['scripts']['pre-install-cmd'] = $this->newComposerFile['scripts']['post-install-cmd'] = ['@install-hooks'];
+
+            return $this->execOnProject($commands, true)->isSuccessful();
+        });
     }
 
     /**
@@ -253,12 +288,12 @@ trait TasksHandler
     /**
      * @return mixed
      */
-    public function taskUpdateReadmeFile($projectName, $projectPath)
+    public function taskUpdateReadmeFile()
     {
-        return $this->task(' ➤  📃 <fg=cyan>Updating README.md</>', function () use ($projectName, $projectPath) {
-            $readMe = str_replace('projectName', $projectName, Storage::get('README.md'));
+        return $this->task(' ➤  📃 <fg=cyan>Updating README.md</>', function () {
+            $readMe = str_replace('projectName', $this->projectBaseName, Storage::get('README.md'));
 
-            return file_put_contents($projectPath.'/README.md', $readMe);
+            return file_put_contents($this->projectPath.'/README.md', $readMe);
         });
     }
 
@@ -266,11 +301,35 @@ trait TasksHandler
      * @param  array  $composerFile
      * @return mixed
      */
-    public function taskUpdateComposerFile(array $composerFile)
+    public function taskUpdateComposerFile()
     {
-        return $this->task(' ➤  🆙 <fg=cyan>Updating composer.json</>', function () use ($composerFile) {
+        return $this->task(' ➤  🆙 <fg=cyan>Updating composer.json</>', function () {
+            $orderedScripts = [
+                'post-autoload-dump',
+                'post-root-package-install',
+                'post-create-project-cmd',
+                'post-update-cmd',
+                'install-hooks',
+                'pre-install-cmd',
+                'post-install-cmd',
+                'phpcs',
+                'phpcbf',
+                'pint',
+                'optimize',
+            ];
+
+            // Making sure that the scripts will come in a nice order
+            $scripts = [];
+            foreach ($orderedScripts as $scriptName) {
+                if (array_key_exists($scriptName, $this->newComposerFile['scripts'])) {
+                    $scripts[$scriptName] = $this->newComposerFile['scripts'][$scriptName];
+                }
+            }
+
+            $this->newComposerFile['scripts'] = $scripts;
+
             $jsonOptions = JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
-            $newComposerString = json_encode($composerFile, $jsonOptions);
+            $newComposerString = json_encode($this->newComposerFile, $jsonOptions);
 
             return file_put_contents($this->projectPath.'/composer.json', $newComposerString);
         });
