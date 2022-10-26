@@ -183,10 +183,10 @@ class NewExtendedCommand extends Command
     {
         $this->getOutput()->writeln('  <bg=blue;fg=white> ADDITIONAL FRONT-END SETUP </>'.PHP_EOL);
 
-        $question = $this->buildQuestionText('Set up <fg=green>Tailwind CSS</>?');
+        $question = $this->buildQuestionText('Install <fg=green>Tailwind CSS</>?');
         $this->installTailwindCSS = $this->confirm($question, true);
 
-        $question = $this->buildQuestionText('Set up <fg=green>ESLint</> and <fg=green>Prettier</>?');
+        $question = $this->buildQuestionText('Install <fg=green>ESLint</> and <fg=green>Prettier</>?');
         $this->installESLintAndPrettier = $this->confirm($question, true);
 
         $question = $this->buildQuestionText('Install <fg=green>Blade Formatter</>?', 'https://npmjs.com/package/blade-formatter');
@@ -287,6 +287,18 @@ class NewExtendedCommand extends Command
     {
         if ($this->installTailwindCSS && $this->taskInstallTailwindCSS()) {
             $this->commitChanges('Tailwind CSS installed');
+        }
+
+        if ($this->installESLintAndPrettier && $this->taskInstallESLintAndPrettier()) {
+            $this->commitChanges('ESLint and Prettier installed');
+        }
+
+        if ($this->installBladeFormatter && $this->taskInstallBladeFormatter()) {
+            $this->commitChanges('Blade Formatter installed');
+        }
+
+        if ($this->installBladeFormatter && $this->taskInstallAlpineJs()) {
+            $this->commitChanges('Alpine.js installed');
         }
     }
 

@@ -20,6 +20,9 @@ trait TasksHandler
         });
     }
 
+    /**
+     * @return bool
+     */
     public function taskInstallTailwindCss()
     {
         return $this->task(' ➤  📚 <fg=cyan>Installing Tailwind CSS</>', function () {
@@ -41,6 +44,63 @@ trait TasksHandler
             }
 
             return false;
+        });
+    }
+
+    /**
+     * @return bool
+     * @read https://vueschool.io/articles/vuejs-tutorials/eslint-and-prettier-with-vite-and-vue-js-3/
+     */
+    public function taskInstallESLintAndPrettier()
+    {
+        return $this->task(' ➤  📚 <fg=cyan>Installing ESLint and Prettier</>', function () {
+            $installation = $this->execOnProject([
+                'npm install --save-dev --save-exact prettier',
+                'echo {}> .prettierrc.json',
+                'npm install --save-dev eslint',
+                'npm install prettier prettier-plugin-organize-attributes -D',
+            ], true, true);
+
+            if ($installation->isSuccessful()) {
+                return file_put_contents($this->projectPath.'/.prettierrc.json', Storage::get('.prettierrc.json'));
+            }
+
+            return false;
+        });
+    }
+
+    /**
+     * @return bool
+     */
+    public function taskInstallBladeFormatter()
+    {
+        return $this->task(' ➤  📚 <fg=cyan>Installing Blade Formatter</>', function () {
+            return $this->execOnProject([
+                'npm install --save-dev blade-formatter',
+                $this->copy().Storage::path('.bladeformatterrc.json')." $this->projectPath",
+            ], true, true)->isSuccessful();
+        });
+    }
+
+    /**
+     * @return bool
+     */
+    public function taskInstallAlpineJs()
+    {
+        return $this->task(' ➤  📚 <fg=cyan>Installing Alpine.js</>', function () {
+            $installation = $this->execOnProject([
+                'npm install alpinejs',
+            ], true, true);
+
+            if ($installation->isSuccessful()) {
+                $alpineDirectives = [
+                    "import Alpine from \"alpinejs\";\n",
+                    "window.Alpine = Alpine;\n",
+                    "Alpine.start();\n",
+                ];
+
+                return file_put_contents($this->projectPath.'/resources/js/bootstrap.js', implode("\n", $alpineDirectives)."\n", FILE_APPEND);
+            }
         });
     }
 
@@ -93,9 +153,16 @@ trait TasksHandler
     public function taskUpdateGitIgnore()
     {
         return $this->task(' ➤  📄 <fg=cyan>Updating .gitignore</>', function () {
-            $command = 'echo ".idea/ \n.phpunit.result.cache \n.phpstorm.meta.php \n_ide_helper.php \n_ide_helper_models.php" >> .gitignore';
+            $itemsToIgnore = [
+                '.idea/',
+                '.phpunit.result.cache',
+                '.phpstorm.meta.php',
+                '_ide_helper.php',
+                '_ide_helper_models.php',
+                '.prettierignore',
+            ];
 
-            return $this->execOnProject($command, true)->isSuccessful();
+            return file_put_contents($this->projectPath.'/.gitignore', implode("\n", $itemsToIgnore)."\n", FILE_APPEND);
         });
     }
 
