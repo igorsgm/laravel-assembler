@@ -42,18 +42,36 @@ class BaseNewCommand extends NewCommand
     }
 
     /**
-     * OVERRIDE
      * Create a GitHub repository and push the git log to it.
      *
      * @param  string  $name
      * @param  string  $directory
      * @param  \Symfony\Component\Console\Input\InputInterface  $input
      * @param  \Symfony\Component\Console\Output\OutputInterface  $output
-     * @return void
+     * @return Process|void
      */
     public function pushToGitHub(string $name, string $directory, InputInterface $input, OutputInterface $output)
     {
-        parent::pushToGitHub($name, $directory, $input, $output);
+        $process = new Process(['gh', 'auth', 'status']);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            $output->writeln('  <bg=yellow;fg=black> WARN </> Make sure the "gh" CLI tool is installed and that you\'re authenticated to GitHub. Skipping...'.PHP_EOL);
+
+            return $process;
+        }
+
+        chdir($directory);
+
+        $name = $input->getOption('organization') ? $input->getOption('organization')."/$name" : $name;
+        $flags = $input->getOption('github') ?: '--private';
+        $branch = $input->getOption('branch') ?: $this->defaultBranch();
+
+        $commands = [
+            "gh repo create {$name} --source=. --push {$flags}",
+        ];
+
+        return $this->runCommands($commands, $input, $output, ['GIT_TERMINAL_PROMPT' => 0]);
     }
 
     /**

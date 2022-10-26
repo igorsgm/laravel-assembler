@@ -6,10 +6,14 @@ test('💻 Installed Laravel', function () {
     $this->artisan('new '.$this->scaffoldDirectoryName.' --quiet -f')
         ->expectsConfirmation($this->buildQuestionText('Include Laravel IDE Helper?'), 'yes')
         ->expectsConfirmation($this->buildQuestionText('Include PHP_CodeSniffer?'), 'yes')
+        ->expectsConfirmation($this->buildQuestionText('Install custom scripts on composer.json?', 'To be easier to run Pint, PHPCS or generate ide-helper files.'), 'yes')
+        ->expectsConfirmation($this->buildQuestionText('Install <fg=green>Tailwind CSS</>?'), 'yes')
+        ->expectsConfirmation($this->buildQuestionText('Install <fg=green>ESLint</> and <fg=green>Prettier</>?'), 'yes')
+        ->expectsConfirmation($this->buildQuestionText('Install <fg=green>Blade Formatter</>?', 'https://npmjs.com/package/blade-formatter'), 'yes')
+        ->expectsConfirmation($this->buildQuestionText('Install <fg=green>Alpine.js</>?', 'https://alpinejs.dev'), 'yes')
         ->expectsConfirmation($this->buildQuestionText('Initialize git?'), 'yes')
         ->expectsConfirmation($this->buildQuestionText('Create <fg=green>pre-commit-hook</>?', 'To validate PHPCS before committing a code.'), 'yes')
         ->expectsConfirmation($this->buildQuestionText('Create GitHub repository for <fg=green>'.$this->scaffoldProjectBaseName.'</>?', 'GitHub CLI required. Check: https://cli.github.com'), 'no')
-        ->expectsConfirmation($this->buildQuestionText('Install custom scripts on composer.json?', 'To be easier to run Pint, PHPCS or generate ide-helper files.'), 'yes')
         ->expectsConfirmation($this->buildQuestionText('Apply local SSL to <fg=green>'.$this->scaffoldProjectBaseName.'</>?', 'Laravel Valet required. Check https://laravel.com/docs/master/valet'), 'no')
         ->expectsConfirmation($this->buildQuestionText('Open <fg=green>'.$this->scaffoldProjectBaseName.'</> on PhpStorm?', 'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html'), 'no')
         ->assertExitCode(0);
@@ -21,6 +25,14 @@ test('💻 Installed Laravel', function () {
 test('📚 Installed additional dev dependencies', function () {
     $this->assertDirectoryExists($this->scaffoldDirectory.DIRECTORY_SEPARATOR.'vendor/barryvdh/laravel-ide-helper');
     $this->assertDirectoryExists($this->scaffoldDirectory.DIRECTORY_SEPARATOR.'vendor/squizlabs/php_codesniffer');
+});
+
+test('📚 Installed npm dependencies', function () {
+    $this->assertDirectoryExists($this->scaffoldDirectory.DIRECTORY_SEPARATOR.'node_modules/tailwindcss');
+    $this->assertDirectoryExists($this->scaffoldDirectory.DIRECTORY_SEPARATOR.'node_modules/@eslint');
+    $this->assertDirectoryExists($this->scaffoldDirectory.DIRECTORY_SEPARATOR.'node_modules/@prettier');
+    $this->assertDirectoryExists($this->scaffoldDirectory.DIRECTORY_SEPARATOR.'node_modules/blade-formatter');
+    $this->assertDirectoryExists($this->scaffoldDirectory.DIRECTORY_SEPARATOR.'node_modules/alpinejs');
 });
 
 test('📄 Created phpcs.xml file', function () {

@@ -5,8 +5,6 @@ namespace App\Commands;
 use App\Helpers\BaseNewCommand;
 use App\Traits\ProcessHelper;
 use App\Traits\TasksHandler;
-use Illuminate\Support\Arr;
-use Laravel\Installer\Console\NewCommand;
 use LaravelZero\Framework\Commands\Command;
 
 class NewExtendedCommand extends Command
@@ -100,6 +98,16 @@ class NewExtendedCommand extends Command
     private $additionalComposerPackages;
 
     /**
+     * @var bool
+     */
+    private $inputSecureValet;
+
+    /**
+     * @var bool
+     */
+    private $inputOpenProjectOnPhpStorm;
+
+    /**
      * Execute the console command.
      *
      * @return mixed
@@ -122,49 +130,37 @@ class NewExtendedCommand extends Command
 
         $this->newLine();
 
-        $this->additionalComposerPackagesQuestions()
-            ->additionalFrontEndQuestions();
-
-        $question = $this->buildQuestionText('Initialize git?');
-        if ($this->gitInitialize = $this->confirm($question, true)) {
-            if ($this->isToInstallPackage('phpcs')) {
-                $question = $this->buildQuestionText('Create <fg=green>pre-commit-hook</>?', 'To validate PHPCS before committing a code.');
-                $this->gitCreatePreCommitHook = $this->confirm($question, true);
-            }
-
-            $question = $this->buildQuestionText('Create GitHub repository for <fg=green>'.$this->projectBaseName.'</>?', 'GitHub CLI required. Check: https://cli.github.com');
-            if ($this->gitCreateRepo = $this->confirm($question, true)) {
-                $question = $this->buildQuestionText('Start git flow for <fg=green>'.$this->projectBaseName.'</>?', 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
-                $this->gitStartGitFlow = $this->confirm($question, true);
-            }
-        }
-
-        $question = $this->buildQuestionText('Install custom scripts on composer.json?',
-            'To be easier to run Pint, PHPCS or generate ide-helper files.');
-        $this->installComposerScripts = $this->confirm($question, true);
+        $this->askAdditionalComposerPackagesQuestions()
+            ->askAdditionalFrontEndQuestions()
+            ->askGitQuestions()
+            ->askLocalEnvQuestions();
 
         $this->warn(' ✨  Let the Magic Begin.');
         $this->newLine();
 
-        if ($this->installLaravelTask()) {
-            $this->gitHubTasks();
-            $this->composerDevDependenciesTasks();
-            $this->npmDependenciesTasks();
-            $this->composerFileTasks();
-            $this->taskPushChangesToGitHub();
+        if ($this->taskInstallLaravel()) {
+            $this->runGitHubTasks();
+            $this->runComposerDevDependenciesTasks();
+            $this->runNpmDependenciesTasks();
+            $this->runComposerFileTasks();
+
+            if ($this->repositoryCreated) {
+                $this->taskPushChangesToGitHub();
+            }
 
             if ($this->gitStartGitFlow) {
                 $this->taskStartGitFlow();
             }
 
-            $this->openProjectTasks();
+            $this->runOpenProjectTasks();
 
+            $this->newLine();
             $this->getOutput()->writeln('  <bg=blue;fg=white> INFO </> <fg=cyan>Application 100% ready! Build something amazing....</>'.PHP_EOL);
             $this->warn(' ✨  Mischief Managed.');
         }
     }
 
-    private function additionalComposerPackagesQuestions()
+    private function askAdditionalComposerPackagesQuestions()
     {
         $this->getOutput()->writeln('  <bg=blue;fg=white> ADDITIONAL COMPOSER PACKAGES </>'.PHP_EOL);
         foreach ($this->additionalComposerPackages as $devDependency) {
@@ -176,61 +172,68 @@ class NewExtendedCommand extends Command
             }
         }
 
+        $question = $this->buildQuestionText('Install custom scripts on composer.json?', 'To be easier to run Pint, PHPCS or generate ide-helper files.');
+        $this->installComposerScripts = $this->confirm($question, true);
+
         return $this;
     }
 
-    private function additionalFrontEndQuestions()
+    private function askAdditionalFrontEndQuestions()
     {
         $this->getOutput()->writeln('  <bg=blue;fg=white> ADDITIONAL FRONT-END SETUP </>'.PHP_EOL);
 
         $question = $this->buildQuestionText('Install <fg=green>Tailwind CSS</>?');
-        $this->installTailwindCSS = $this->confirm($question, true);
+        $this->inputInstallTailwindCSS = $this->confirm($question, true);
 
         $question = $this->buildQuestionText('Install <fg=green>ESLint</> and <fg=green>Prettier</>?');
-        $this->installESLintAndPrettier = $this->confirm($question, true);
+        $this->inputInstallESLintAndPrettier = $this->confirm($question, true);
 
         $question = $this->buildQuestionText('Install <fg=green>Blade Formatter</>?', 'https://npmjs.com/package/blade-formatter');
-        $this->installBladeFormatter = $this->confirm($question, true);
+        $this->inputInstallBladeFormatter = $this->confirm($question, true);
 
-        $question = $this->buildQuestionText('Install <fg=green>Alpine.js</>?', 'https://alpinejs.dev/');
-        $this->installBladeFormatter = $this->confirm($question, true);
+        $question = $this->buildQuestionText('Install <fg=green>Alpine.js</>?', 'https://alpinejs.dev');
+        $this->inputInstallAlpineJs = $this->confirm($question, true);
 
         return $this;
     }
 
-    /** Execute the Laravel Installation script from laravel/installer
-     * @see https://github.com/laravel/installer
-     *
-     * @return int
-     */
-    protected function installLaravelTask()
+    public function askGitQuestions()
     {
-        return $this->task(' ➤  💻 <fg=cyan>Installing Laravel</>', function () {
-            $options = collect($this->options())
-                ->filter()->mapWithKeys(function ($value, $key) {
-                    return ["--{$key}" => $value];
-                })->toArray();
+        $this->getOutput()->writeln('  <bg=blue;fg=white> GIT SETUP </>'.PHP_EOL);
 
-            $this->call(NewCommand::class, array_merge([
-                'name' => $this->directory,
-                '--branch' => 'master',
-                '--git' => $this->gitInitialize ?? false,
-            ],
-                Arr::except($options, ['--git', '--github'])
-            ));
-
-            if ($projectCreated = file_exists($this->projectPath)) {
-                $this->getOutput()->writeln('  <bg=blue;fg=white> INFO </> <fg=cyan>Actually... Let\'s set up a few things more</> 🛠'.PHP_EOL);
+        $question = $this->buildQuestionText('Initialize git?');
+        if ($this->gitInitialize = $this->confirm($question, true)) {
+            if ($this->isToInstallPackage('phpcs')) {
+                $question = $this->buildQuestionText('Create <fg=green>pre-commit-hook</>?',
+                    'To validate PHPCS before committing a code.');
+                $this->gitCreatePreCommitHook = $this->confirm($question, true);
             }
 
-            return $projectCreated;
-        });
+            $question = $this->buildQuestionText('Create GitHub repository for <fg=green>'.$this->projectBaseName.'</>?', 'GitHub CLI required. Check: https://cli.github.com');
+            if ($this->gitCreateRepo = $this->confirm($question, true)) {
+                $question = $this->buildQuestionText('Start git flow for <fg=green>'.$this->projectBaseName.'</>?', 'gitflow-avh required. Check: https://github.com/petervanderdoes/gitflow-avh');
+                $this->gitStartGitFlow = $this->confirm($question, true);
+            }
+        }
+
+        return $this;
+    }
+
+    public function askLocalEnvQuestions()
+    {
+        $this->getOutput()->writeln('  <bg=blue;fg=white> LOCAL ENVIRONMENT SETUP </>'.PHP_EOL);
+
+        $question = $this->buildQuestionText('Apply local SSL to <fg=green>'.$this->projectBaseName.'</>?', 'Laravel Valet required. Check https://laravel.com/docs/master/valet');
+        $this->inputSecureValet = $this->confirm($question, true);
+
+        $question = $this->buildQuestionText('Open <fg=green>'.$this->projectBaseName.'</> on PhpStorm?', 'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html');
+        $this->inputOpenProjectOnPhpStorm = $this->confirm($question, true);
     }
 
     /**
      * All the tasks related to the dev dependencies
      */
-    public function composerDevDependenciesTasks()
+    public function runComposerDevDependenciesTasks()
     {
         $optimizeScripts = [];
 
@@ -283,21 +286,33 @@ class NewExtendedCommand extends Command
     /**
      * All the tasks related to the dev dependencies
      */
-    public function npmDependenciesTasks()
+    public function runNpmDependenciesTasks()
     {
-        if ($this->installTailwindCSS && $this->taskInstallTailwindCSS()) {
+        // Run npm install if not executed yet
+        if (! is_dir($this->projectPath.'/node_modules') &&
+            (
+                $this->inputInstallTailwindCSS ||
+                $this->inputInstallESLintAndPrettier ||
+                $this->inputInstallBladeFormatter ||
+                $this->inputInstallAlpineJs
+            )
+        ) {
+            $this->taskNpmInstall();
+        }
+
+        if ($this->inputInstallTailwindCSS && $this->taskInstallTailwindCSS()) {
             $this->commitChanges('Tailwind CSS installed');
         }
 
-        if ($this->installESLintAndPrettier && $this->taskInstallESLintAndPrettier()) {
+        if ($this->inputInstallESLintAndPrettier && $this->taskInstallESLintAndPrettier()) {
             $this->commitChanges('ESLint and Prettier installed');
         }
 
-        if ($this->installBladeFormatter && $this->taskInstallBladeFormatter()) {
+        if ($this->inputInstallBladeFormatter && $this->taskInstallBladeFormatter()) {
             $this->commitChanges('Blade Formatter installed');
         }
 
-        if ($this->installBladeFormatter && $this->taskInstallAlpineJs()) {
+        if ($this->inputInstallAlpineJs && $this->taskInstallAlpineJs()) {
             $this->commitChanges('Alpine.js installed');
         }
     }
@@ -308,7 +323,7 @@ class NewExtendedCommand extends Command
      *
      * @return bool
      */
-    public function gitHubTasks()
+    public function runGitHubTasks()
     {
         $this->taskUpdateGitIgnore();
 
@@ -344,7 +359,7 @@ class NewExtendedCommand extends Command
     /**
      * Tasks related to update the composer.json file of the projects with new scripts.
      */
-    public function composerFileTasks()
+    public function runComposerFileTasks()
     {
         if (! $this->installComposerScripts) {
             return false;
@@ -382,25 +397,13 @@ class NewExtendedCommand extends Command
     /**
      * Perform Valet and PhpStorm IDE actions
      */
-    public function openProjectTasks()
+    public function runOpenProjectTasks()
     {
-        $this->newLine();
-        $this->getOutput()->writeln('  <bg=blue;fg=white> INFO </> <fg=cyan>Application 99% ready...</>'.PHP_EOL);
-
-        $question = $this->buildQuestionText('Apply local SSL to <fg=green>'.$this->projectBaseName.'</>?',
-            'Laravel Valet required. Check https://laravel.com/docs/master/valet');
-        $secureValet = $this->confirm($question, true);
-
-        $question = $this->buildQuestionText('Open <fg=green>'.$this->projectBaseName.'</> on PhpStorm?',
-            'Jetbrains CLI required. Check https://www.jetbrains.com/help/phpstorm/working-with-the-ide-features-from-command-line.html');
-        $openProjectOnPhpStorm = $this->confirm($question, true);
-
-        $valetSecured = $secureValet && $this->taskValetInstallSSL($this->projectBaseName);
-        if ($valetSecured) {
+        if ($this->inputSecureValet && $this->taskValetInstallSSL($this->projectBaseName)) {
             $this->taskValetOpenProjectOnBrowser($this->projectBaseName);
         }
 
-        if ($openProjectOnPhpStorm) {
+        if ($this->inputOpenProjectOnPhpStorm) {
             $this->taskLoadProjectOnPhpStorm();
             $this->newLine();
         }

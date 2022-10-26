@@ -2,10 +2,41 @@
 
 namespace App\Traits;
 
+use Illuminate\Support\Arr;
+use Laravel\Installer\Console\NewCommand;
 use Storage;
 
 trait TasksHandler
 {
+    /** Execute the Laravel Installation script from laravel/installer
+     * @see https://github.com/laravel/installer
+     *
+     * @return int
+     */
+    protected function taskInstallLaravel()
+    {
+        return $this->task(' ➤  💻 <fg=cyan>Installing Laravel</>', function () {
+            $options = collect($this->options())
+                ->filter()->mapWithKeys(function ($value, $key) {
+                    return ["--{$key}" => $value];
+                })->toArray();
+
+            $this->call(NewCommand::class, array_merge([
+                'name' => $this->directory,
+                '--branch' => 'master',
+                '--git' => $this->gitInitialize ?? false,
+            ],
+                Arr::except($options, ['--git', '--github'])
+            ));
+
+            if ($projectCreated = file_exists($this->projectPath)) {
+                $this->getOutput()->writeln('  <bg=blue;fg=white> INFO </> <fg=cyan>Actually... Let\'s set up a few things more</> 🛠'.PHP_EOL);
+            }
+
+            return $projectCreated;
+        });
+    }
+
     /**
      * @param  array  $packages
      * @return mixed
@@ -17,6 +48,16 @@ trait TasksHandler
 
             return $this->execOnProject($this->baseLaravelInstaller->findComposer().' require --dev --quiet '.$packages)
                 ->isSuccessful();
+        });
+    }
+
+    /**
+     * @return bool
+     */
+    public function taskNpmInstall()
+    {
+        return $this->task(' ➤  📚 <fg=cyan>Installing npm dependencies</>', function () {
+            return $this->execOnProject('npm install', true, true)->isSuccessful();
         });
     }
 
@@ -193,9 +234,9 @@ trait TasksHandler
     {
         return $this->task(' ➤  ☁️  <fg=cyan>Creating private repository</>', function () use ($repoName) {
             $this->newLine();
-            $this->baseLaravelInstaller->pushToGitHub($repoName, $this->projectPath, $this->input, $this->getOutput());
+            $process = $this->baseLaravelInstaller->pushToGitHub($repoName, $this->projectPath, $this->input, $this->getOutput());
 
-            return true;
+            return $process->isSuccessful();
         });
     }
 
@@ -268,12 +309,12 @@ trait TasksHandler
      */
     public function taskValetInstallSSL($directory)
     {
-        return $this->task(' ➤  ⏳  <fg=cyan>Applying local SSL to "'.$directory.'"</>',
+        return $this->task(' ➤  🔐  <fg=cyan>Applying local SSL to "'.$directory.'"</>',
             function () use ($directory) {
                 $this->newLine();
                 $this->line('<fg=#a9a9a9>Your sudo password may be requested at this step.</>');
 
-                return $this->execOnProject('valet secure '.$directory, true)->isSuccessful();
+                return $this->execOnProject('valet secure '.$directory, true, true)->isSuccessful();
             });
     }
 
