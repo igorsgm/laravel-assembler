@@ -83,7 +83,7 @@ trait TasksHandler
             ], true, ! $this->isVerbose());
 
             if ($installation->isSuccessful()) {
-                file_put_contents($this->projectPath.'/tailwind.config.js', Storage::get('tailwind.config.js'));
+                file_put_contents($this->projectFilePath('/tailwind.config.js'), Storage::get('tailwind.config.js'));
 
                 $tailwindDirectives = [
                     '@tailwind base;',
@@ -91,7 +91,7 @@ trait TasksHandler
                     '@tailwind utilities;',
                 ];
 
-                return file_put_contents($this->projectPath.'/resources/css/app.css', implode("\n", $tailwindDirectives)."\n", FILE_APPEND);
+                return file_put_contents($this->projectFilePath('/resources/css/app.css'), implode("\n", $tailwindDirectives)."\n", FILE_APPEND);
             }
 
             return false;
@@ -113,7 +113,7 @@ trait TasksHandler
             ], true, ! $this->isVerbose());
 
             if ($installation->isSuccessful()) {
-                return file_put_contents($this->projectPath.'/.prettierrc.json', Storage::get('.prettierrc.json'));
+                return file_put_contents($this->projectFilePath('/.prettierrc.json'), Storage::get('.prettierrc.json'));
             }
 
             return false;
@@ -150,7 +150,7 @@ trait TasksHandler
                     "Alpine.start();\n",
                 ];
 
-                return file_put_contents($this->projectPath.'/resources/js/bootstrap.js', implode("\n", $alpineDirectives)."\n", FILE_APPEND);
+                return file_put_contents($this->projectFilePath('/resources/js/bootstrap.js'), implode("\n", $alpineDirectives)."\n", FILE_APPEND);
             }
         });
     }
@@ -165,9 +165,9 @@ trait TasksHandler
                 'VITE_APP_URL="${APP_URL}"',
             ])."\n";
 
-            return file_put_contents($this->projectPath.DIRECTORY_SEPARATOR.'.env', $viteEnvKeys, FILE_APPEND) &&
-                file_put_contents($this->projectPath.DIRECTORY_SEPARATOR.'.env.example', $viteEnvKeys, FILE_APPEND) &&
-                file_put_contents($this->projectPath.DIRECTORY_SEPARATOR.'vite.config.js', Storage::get('vite.config.js'));
+            return file_put_contents($this->projectFilePath('.env'), $viteEnvKeys, FILE_APPEND) &&
+                file_put_contents($this->projectFilePath('.env.example'), $viteEnvKeys, FILE_APPEND) &&
+                file_put_contents($this->projectFilePath('vite.config.js'), Storage::get('vite.config.js'));
         });
     }
 
@@ -231,7 +231,7 @@ trait TasksHandler
                 '.prettierignore',
             ];
 
-            return file_put_contents($this->projectPath.'/.gitignore', implode("\n", $itemsToIgnore)."\n", FILE_APPEND);
+            return file_put_contents($this->projectFilePath('/.gitignore'), implode("\n", $itemsToIgnore)."\n", FILE_APPEND);
         });
     }
 
@@ -295,7 +295,7 @@ trait TasksHandler
         return $this->task(' ➤  📃 <fg=cyan>Updating README.md</>', function () {
             $readMe = str_replace('projectName', $this->projectBaseName, Storage::get('README.md'));
 
-            return file_put_contents($this->projectPath.'/README.md', $readMe);
+            return file_put_contents($this->projectFilePath('/README.md'), $readMe);
         });
     }
 
@@ -333,7 +333,7 @@ trait TasksHandler
             $jsonOptions = JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
             $newComposerString = json_encode($this->newComposerFile, $jsonOptions);
 
-            return file_put_contents($this->projectPath.'/composer.json', $newComposerString);
+            return file_put_contents($this->projectFilePath('/composer.json'), $newComposerString);
         });
     }
 

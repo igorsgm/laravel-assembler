@@ -29,7 +29,7 @@ trait ProcessHelper
     {
         $this->directory = $directoryName;
         $this->projectBaseName = basename($directoryName);
-        $this->projectPath = $directoryName !== '.' ? getcwd().'/'.$directoryName : '.';
+        $this->projectPath = $directoryName !== '.' ? getcwd().DIRECTORY_SEPARATOR.$directoryName : '.';
     }
 
     /**
@@ -198,6 +198,19 @@ trait ProcessHelper
     public function isToInstallPackage(string $packageName)
     {
         return in_array($this->additionalComposerPackages[$packageName]['package'], $this->devPackagesToInstall);
+    }
+
+    /**
+     * Retrieves the project path treating the directory separators according to the OS
+     *
+     * @param  string  $filePath
+     * @return string
+     */
+    public function projectFilePath($filePath)
+    {
+        $filePath = trim(str_replace('/', DIRECTORY_SEPARATOR, $filePath), DIRECTORY_SEPARATOR);
+
+        return $this->projectPath.DIRECTORY_SEPARATOR.$filePath;
     }
 
     /**

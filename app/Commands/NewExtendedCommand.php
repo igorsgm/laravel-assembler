@@ -281,7 +281,7 @@ class NewExtendedCommand extends Command
     public function runNpmDependenciesTasks()
     {
         // Run npm install if not executed yet
-        if (! is_dir($this->projectPath.'/node_modules') &&
+        if (! is_dir($this->projectFilePath('/node_modules')) &&
             (
                 $this->inputInstallTailwindCSS ||
                 $this->inputInstallESLintAndPrettier ||
