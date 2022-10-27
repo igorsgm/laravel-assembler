@@ -199,4 +199,20 @@ trait ProcessHelper
     {
         return in_array($this->additionalComposerPackages[$packageName]['package'], $this->devPackagesToInstall);
     }
+
+    /**
+     * @return bool
+     */
+    public function isVerbose()
+    {
+        return $this->input->getOption('verbose') ?? false;
+    }
+
+    /**
+     * @return string
+     */
+    public function quietFlag()
+    {
+        return $this->isVerbose() ? '' : '--quiet';
+    }
 }

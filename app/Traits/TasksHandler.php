@@ -45,9 +45,9 @@ trait TasksHandler
     {
         return $this->task(' ➤  📚 <fg=cyan>Installing additional Composer dependencies</>', function () use ($packages) {
             $packages = implode(' ', $packages);
+            $command = $this->baseLaravelInstaller->findComposer()." require --dev {$this->quietFlag()} ".$packages;
 
-            return $this->execOnProject($this->baseLaravelInstaller->findComposer().' require --dev --quiet '.$packages)
-                ->isSuccessful();
+            return $this->execOnProject($command)->isSuccessful();
         });
     }
 
@@ -57,7 +57,7 @@ trait TasksHandler
     public function taskNpmInstall()
     {
         return $this->task(' ➤  📚 <fg=cyan>Installing npm dependencies</>', function () {
-            return $this->execOnProject('npm install', true, true)->isSuccessful();
+            return $this->execOnProject('npm install', true, ! $this->isVerbose())->isSuccessful();
         });
     }
 
@@ -67,7 +67,7 @@ trait TasksHandler
     public function taskNpmRunBuild()
     {
         return $this->task(' ➤  📚 <fg=cyan>Building npm assets</>', function () {
-            return $this->execOnProject('npm run build', true, true)->isSuccessful();
+            return $this->execOnProject('npm run build', true, ! $this->isVerbose())->isSuccessful();
         });
     }
 
@@ -80,7 +80,7 @@ trait TasksHandler
             $installation = $this->execOnProject([
                 'npm install -D tailwindcss postcss autoprefixer @tailwindcss/aspect-ratio @tailwindcss/forms @tailwindcss/typography',
                 'npx tailwindcss init -p',
-            ], true, true);
+            ], true, ! $this->isVerbose());
 
             if ($installation->isSuccessful()) {
                 file_put_contents($this->projectPath.'/tailwind.config.js', Storage::get('tailwind.config.js'));
@@ -110,7 +110,7 @@ trait TasksHandler
                 'echo {}> .prettierrc.json',
                 'npm install --save-dev eslint',
                 'npm install prettier prettier-plugin-organize-attributes -D',
-            ], true, true);
+            ], true, ! $this->isVerbose());
 
             if ($installation->isSuccessful()) {
                 return file_put_contents($this->projectPath.'/.prettierrc.json', Storage::get('.prettierrc.json'));
@@ -129,7 +129,7 @@ trait TasksHandler
             return $this->execOnProject([
                 'npm install --save-dev blade-formatter',
                 $this->copy().Storage::path('.bladeformatterrc.json')." $this->projectPath",
-            ], true, true)->isSuccessful();
+            ], true, ! $this->isVerbose())->isSuccessful();
         });
     }
 
@@ -141,7 +141,7 @@ trait TasksHandler
         return $this->task(' ➤  📚 <fg=cyan>Installing Alpine.js</>', function () {
             $installation = $this->execOnProject([
                 'npm install alpinejs',
-            ], true, true);
+            ], true, ! $this->isVerbose());
 
             if ($installation->isSuccessful()) {
                 $alpineDirectives = [
@@ -191,10 +191,12 @@ trait TasksHandler
     public function taskGenerateIdeHelperFiles()
     {
         return $this->task(' ➤  📑 <fg=cyan>Generating IDE Helper files</>', function () {
+            $quiet = $this->quietFlag();
+
             return $this->execOnProject([
-                PHP_BINARY.' artisan ide-helper:eloquent --quiet',
-                PHP_BINARY.' artisan ide-helper:generate --quiet',
-                PHP_BINARY.' artisan ide-helper:meta --quiet',
+                PHP_BINARY." artisan ide-helper:eloquent {$quiet}",
+                PHP_BINARY." artisan ide-helper:generate {$quiet}",
+                PHP_BINARY." artisan ide-helper:meta {$quiet}",
             ])->isSuccessful();
         });
     }
@@ -206,7 +208,7 @@ trait TasksHandler
     {
         $commands = [];
         foreach ($providers as $provider) {
-            $commands[] = PHP_BINARY.' artisan vendor:publish --provider="'.$provider.'" --tag=config --quiet';
+            $commands[] = PHP_BINARY.' artisan vendor:publish --provider="'.$provider.'" --tag=config '.$this->quietFlag();
         }
 
         $this->task(' ➤  📂 <fg=cyan>Publishing vendor config files</>', function () use ($commands) {
@@ -281,7 +283,7 @@ trait TasksHandler
     public function taskStartGitFlow()
     {
         return $this->task(' ➤  ☁️  <fg=cyan>Starting git flow</>', function () {
-            return $this->execOnProject('git flow init -d', true, true)->isSuccessful();
+            return $this->execOnProject('git flow init -d', true, ! $this->isVerbose())->isSuccessful();
         });
     }
 
@@ -343,7 +345,7 @@ trait TasksHandler
         return $this->task(' ➤  🍺 <fg=cyan>Executing Pint</>', function () {
             $command = $this->vendorBin('pint');
 
-            return $this->execOnProject($command, true, true)->isSuccessful();
+            return $this->execOnProject($command, true, ! $this->isVerbose())->isSuccessful();
         });
     }
 
@@ -352,12 +354,12 @@ trait TasksHandler
      */
     public function taskPushChangesToGitHub()
     {
-        return $this->task(' ➤  ☁️  <fg=cyan>Committing last changes</>', function () {
+        return $this->task(' ➤  ☁️  <fg=cyan>Pushing last changes</>', function () {
             $this->newLine();
             $branch = $this->baseLaravelInstaller->defaultBranch();
 
             return $this->execOnProject([
-                "git push -u origin {$branch} --quiet",
+                "git push -u origin {$branch} {$this->quietFlag()}",
             ], true)->isSuccessful();
         });
     }
@@ -368,12 +370,12 @@ trait TasksHandler
      */
     public function taskValetInstallSSL($directory)
     {
-        return $this->task(' ➤  🔐  <fg=cyan>Applying local SSL to "'.$directory.'"</>',
+        return $this->task(' ➤  🔐  <fg=cyan>Applying local SSL to '.$directory.'</>',
             function () use ($directory) {
                 $this->newLine();
                 $this->line('<fg=#a9a9a9>Your sudo password may be requested at this step.</>');
 
-                return $this->execOnProject('valet secure '.$directory, true)->isSuccessful();
+                return $this->execOnProject('valet secure '.$directory, true, ! $this->isVerbose())->isSuccessful();
             });
     }
 
