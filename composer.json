@@ -11,8 +11,8 @@
         }
     ],
     "require": {
-        "php": "^7.3|^8.0",
-        "laminas/laminas-text": "^2.9",
+        "php": "^8.0",
+        "laminas/laminas-text": "^2.10",
         "laravel/installer": "^4.2",
         "ext-json": "*"
     },
